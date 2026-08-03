@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+/*
+ * 「紙の校正刷り（proof sheet）」をモチーフにしたテーマ。
+ * 用紙色 + 墨色 + 朱色のアクセント1色に絞り、
+ * プレビューの白いメール本体が主役として浮き上がるようにしている。
+ */
+@theme {
+  --color-paper: #f4f1ea;
+  --color-paper-sunk: #e6e1d4;
+  --color-card: #fffdf8;
+  --color-ink: #17150f;
+  --color-ink-soft: #57534a;
+  --color-ink-faint: #8d8778;
+  --color-rule: #d8d1c1;
+  --color-vermilion: #c1440e;
+
+  --font-display: var(--font-display-serif), 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans:
+    'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', Meiryo, system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* 方眼紙のような下地。用紙感を出すための控えめなテクスチャ */
+.texture-grid {
+  background-image: radial-gradient(var(--color-rule) 0.5px, transparent 0.5px);
+  background-size: 14px 14px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
