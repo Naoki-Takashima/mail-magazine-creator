@@ -34,16 +34,7 @@ export function BottomBannerSection({
   const isFull = block.banners.length >= MAX_BOTTOM_BANNERS;
 
   return (
-    <EditorSection
-      index="07"
-      title="下部大バナー"
-      description="メール下部に1カラムで縦に積まれるバナーです。画像だけでも表示され、ボタンを付けることもできます。"
-      meta={
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
-          {block.banners.length} / {MAX_BOTTOM_BANNERS}
-        </span>
-      }
-    >
+    <EditorSection title="下部大バナー" meta={`${block.banners.length} / ${MAX_BOTTOM_BANNERS}`}>
       <TitleFields
         idPrefix="bottom-banner"
         title={block.title}
@@ -67,7 +58,7 @@ export function BottomBannerSection({
           ))}
         </div>
       ) : (
-        <p className="border-rule text-ink-faint border border-dashed px-5 py-6 text-center text-[13px]">
+        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
           まだバナーはありません
         </p>
       )}

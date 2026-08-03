@@ -41,16 +41,7 @@ export function TopicsSection({
   const isFull = block.items.length >= MAX_TOPIC_ITEMS;
 
   return (
-    <EditorSection
-      index="08"
-      title="トピックスエリア"
-      description="画像とテキストを横並びにしたお知らせ一覧です。1件ごとに区切りの罫線が入ります。"
-      meta={
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
-          {block.items.length} / {MAX_TOPIC_ITEMS}
-        </span>
-      }
-    >
+    <EditorSection title="トピックスエリア" meta={`${block.items.length} / ${MAX_TOPIC_ITEMS}`}>
       <TitleFields
         idPrefix="topics"
         title={block.title}
@@ -75,7 +66,7 @@ export function TopicsSection({
             ))}
           </div>
         ) : (
-          <p className="border-rule text-ink-faint border border-dashed px-5 py-6 text-center text-[13px]">
+          <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
             まだトピックはありません
           </p>
         )}
@@ -91,10 +82,7 @@ export function TopicsSection({
       </div>
 
       <div className="border-rule border-t pt-5">
-        <p className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">Button</p>
-        <p className="text-ink-soft mt-1.5 mb-4 text-[13px] leading-relaxed">
-          トピックスの後ろに、コンテンツ幅いっぱいで1件だけ表示されます。
-        </p>
+        <p className="text-fg-soft mb-4 text-[12px] font-medium">ボタン</p>
         <ButtonFields
           idPrefix="topics-button"
           button={block.button}

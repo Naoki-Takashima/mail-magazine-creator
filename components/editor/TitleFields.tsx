@@ -27,7 +27,6 @@ export function TitleFields({
       <TextField
         fieldId={`${idPrefix}-title`}
         label="タイトル"
-        description="任意。空のときは見出し行を出しません。"
         value={title}
         onChange={(value) => onChange('title', value)}
         placeholder={placeholder}

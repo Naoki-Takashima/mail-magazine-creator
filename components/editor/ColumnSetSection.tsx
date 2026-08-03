@@ -16,11 +16,6 @@ type ColumnSetSectionProps = ColumnSetHandlers & {
   onAddSet: () => void;
 };
 
-const DESCRIPTIONS: Record<ColumnVariant, string> = {
-  three: '3カラムで左寄せに並びます。画像だけでも表示され、ロゴを付けると画像の直下に繋がります。',
-  two: '2カラムで左寄せに並びます。太字テキストの下にノーマルテキストを置けます。',
-};
-
 /**
  * 3カラム / 2カラムのブロック本体。
  * 構造が同型なので variant を渡すだけで 05 / 06 のどちらにもなる。
@@ -37,16 +32,7 @@ export function ColumnSetSection({
   const idPrefix = `${variant}-column`;
 
   return (
-    <EditorSection
-      index={config.sectionIndex}
-      title={config.title}
-      description={DESCRIPTIONS[variant]}
-      meta={
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
-          {sets.length} / {MAX_COLUMN_SETS}
-        </span>
-      }
-    >
+    <EditorSection title={config.title} meta={`${sets.length} / ${MAX_COLUMN_SETS}`}>
       {sets.length > 0 ? (
         <div className="space-y-5">
           {sets.map((set, position) => (
@@ -62,7 +48,7 @@ export function ColumnSetSection({
           ))}
         </div>
       ) : (
-        <p className="border-rule text-ink-faint border border-dashed px-5 py-6 text-center text-[13px]">
+        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
           まだセットはありません
         </p>
       )}

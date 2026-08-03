@@ -33,21 +33,19 @@ export function LargeBannerCard({
   onFieldChange,
   onRemove,
 }: LargeBannerCardProps) {
-  const label = String(position + 1).padStart(2, '0');
+  const label = String(position + 1);
   const idFor = (suffix: string) => `${idPrefix}-${suffix}`;
   const change = (field: EditableLargeBannerField) => (value: string) =>
     onFieldChange(banner.id, field, value);
 
   return (
-    <div className="bg-paper-sunk border-rule border p-5 sm:p-6">
+    <div className="bg-canvas-sunk border-rule rounded-xl border p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">
-          Banner {label}
-        </span>
+        <span className="text-fg-soft text-[12px] font-medium">バナー {label}</span>
         <button
           type="button"
           onClick={() => onRemove(banner.id)}
-          className="text-ink-soft hover:text-vermilion focus-visible:outline-vermilion font-mono text-[11px] tracking-[0.16em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="text-fg-faint hover:text-danger focus-visible:outline-accent rounded-md text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           削除
         </button>
@@ -73,10 +71,7 @@ export function LargeBannerCard({
       </div>
 
       <div className="border-rule mt-6 border-t pt-5">
-        <p className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">Button</p>
-        <p className="text-ink-soft mt-1.5 text-[13px] leading-relaxed">
-          ボタンテキストを入れると表示されます。ボタンURLが空のときは上のURLが使われます。
-        </p>
+        <p className="text-fg-soft text-[12px] font-medium">ボタン</p>
 
         <div className="mt-5 space-y-5">
           <TextField

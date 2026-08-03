@@ -26,16 +26,7 @@ export function LargeBannerSection({
   const isFull = banners.length >= MAX_LARGE_BANNERS;
 
   return (
-    <EditorSection
-      index="04"
-      title="大バナー"
-      description="1カラムで縦に積まれるバナーです。画像だけでも表示され、ボタンを付けることもできます。"
-      meta={
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
-          {banners.length} / {MAX_LARGE_BANNERS}
-        </span>
-      }
-    >
+    <EditorSection title="大バナー" meta={`${banners.length} / ${MAX_LARGE_BANNERS}`}>
       {banners.length > 0 ? (
         <div className="space-y-5">
           {banners.map((banner, position) => (
@@ -51,7 +42,7 @@ export function LargeBannerSection({
           ))}
         </div>
       ) : (
-        <p className="border-rule text-ink-faint border border-dashed px-5 py-6 text-center text-[13px]">
+        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
           まだ大バナーはありません
         </p>
       )}

@@ -34,28 +34,17 @@ export function InfoLinksSection({
   const isFull = links.length >= MAX_INFO_LINKS;
 
   return (
-    <EditorSection
-      index="09"
-      title="インフォメーション"
-      description="メール最下部に中央寄せで縦に並ぶリンクです。見出しは出しません。"
-      meta={
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
-          {links.length} / {MAX_INFO_LINKS}
-        </span>
-      }
-    >
+    <EditorSection title="インフォメーション" meta={`${links.length} / ${MAX_INFO_LINKS}`}>
       {links.length > 0 ? (
         <div className="space-y-3">
           {links.map((link, position) => (
-            <div key={link.id} className="bg-paper border-rule border p-4">
+            <div key={link.id} className="bg-canvas border-rule rounded-lg border p-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">
-                  Link {String(position + 1).padStart(2, '0')}
-                </span>
+                <span className="text-fg-soft text-[12px] font-medium">リンク {position + 1}</span>
                 <button
                   type="button"
                   onClick={() => onRemove(link.id)}
-                  className="text-ink-soft hover:text-vermilion focus-visible:outline-vermilion font-mono text-[11px] tracking-[0.16em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="text-fg-faint hover:text-danger focus-visible:outline-accent rounded-md text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   削除
                 </button>
@@ -82,7 +71,7 @@ export function InfoLinksSection({
           ))}
         </div>
       ) : (
-        <p className="border-rule text-ink-faint border border-dashed px-5 py-6 text-center text-[13px]">
+        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
           まだリンクはありません
         </p>
       )}

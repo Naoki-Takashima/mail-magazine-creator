@@ -9,12 +9,7 @@ type SubjectSectionProps = {
 
 export function SubjectSection({ value, error, onChange }: SubjectSectionProps) {
   return (
-    <EditorSection
-      index="02"
-      title="件名"
-      description="受信トレイに並ぶ件名です。メール本文には差し込まれず、右のプレビュー上部に表示されます。"
-      required
-    >
+    <EditorSection title="件名" required>
       <TextField
         fieldId="subject"
         label="件名"

@@ -10,12 +10,7 @@ type StripBannerSectionProps = {
 
 export function StripBannerSection({ banner, errors, onFieldChange }: StripBannerSectionProps) {
   return (
-    <EditorSection
-      index="03"
-      title="帯バナー"
-      description="メール最上部に幅いっぱいで配置される帯です。画像だけでも表示され、URLを入れると画像全体がリンクになります。"
-      meta={<span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">MAX 1</span>}
-    >
+    <EditorSection title="帯バナー" meta="最大1件">
       <UrlField
         fieldId="strip-banner-image-url"
         label="画像パス"

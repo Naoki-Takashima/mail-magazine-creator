@@ -25,18 +25,10 @@ export function PreviewPanel({ html, deliveryDate, subject, panelId }: PreviewPa
     <section
       id={panelId}
       aria-label="プレビュー"
-      className="bg-paper-sunk texture-grid border-rule relative flex min-w-0 flex-col border-t lg:h-full lg:min-h-0 lg:border-t-0 lg:border-l"
+      className="bg-canvas-sunk border-rule relative flex min-w-0 flex-col border-t lg:h-full lg:min-h-0 lg:border-t-0 lg:border-l"
     >
-      {/* 縦組みのラベル。パネルの左端に沿わせて版面のアクセントにする */}
-      <span
-        aria-hidden
-        className="text-ink-faint pointer-events-none absolute top-6 left-3 hidden font-mono text-[10px] tracking-[0.4em] uppercase [writing-mode:vertical-rl] lg:block"
-      >
-        Live Preview
-      </span>
-
       {/* 見出しは置かない。浮いた高さはそのまま端末枠の高さに回す */}
-      <div className="shrink-0 px-4 pt-6 pb-4 sm:px-10 lg:pl-14">
+      <div className="shrink-0 px-4 pt-6 pb-4 sm:px-10">
         <PreviewMeta deliveryDate={deliveryDate} />
       </div>
 
@@ -45,7 +37,7 @@ export function PreviewPanel({ html, deliveryDate, subject, panelId }: PreviewPa
         端末枠に高さを与えないと潰れるため 70vh を直接指定する
         （1画面に2つのスクロール領域を作らないよう、100vh にはしない）。
       */}
-      <div className="h-[70vh] min-h-0 grow basis-auto px-4 pb-6 sm:px-10 lg:h-auto lg:basis-0 lg:pl-14">
+      <div className="h-[70vh] min-h-0 grow basis-auto px-4 pb-8 sm:px-10 lg:h-auto lg:basis-0">
         {/* 件名はデバウンスせず即時反映する（iframe の外なので再読み込みが起きない） */}
         <PhoneMock header={<SubjectBar subject={subject} />}>
           <MailFrame html={html} />

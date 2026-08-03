@@ -30,7 +30,7 @@ const LOGO = {
 
 export function AppHeader({ isPreviewOpen, previewPanelId, onTogglePreview }: AppHeaderProps) {
   return (
-    <header className="border-rule bg-paper/85 sticky top-0 z-10 shrink-0 border-b backdrop-blur-sm">
+    <header className="border-rule bg-canvas/85 sticky top-0 z-10 shrink-0 border-b backdrop-blur-sm">
       <div className="flex items-center justify-between gap-4 px-6 py-4 sm:px-8">
         <span
           className="relative block h-5 shrink-0 overflow-hidden sm:h-6"
@@ -52,15 +52,15 @@ export function AppHeader({ isPreviewOpen, previewPanelId, onTogglePreview }: Ap
           onClick={onTogglePreview}
           aria-expanded={isPreviewOpen}
           aria-controls={previewPanelId}
-          className="border-rule text-ink hover:border-vermilion hover:text-vermilion focus-visible:outline-vermilion group inline-flex items-center gap-2.5 border px-3.5 py-2 font-mono text-[11px] tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-rule text-fg-soft hover:border-accent hover:bg-accent-soft hover:text-accent focus-visible:outline-accent inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <span
             aria-hidden
-            className={`size-2 border transition-colors ${
-              isPreviewOpen ? 'border-vermilion bg-vermilion' : 'border-ink-faint bg-transparent'
+            className={`size-1.5 rounded-full transition-colors ${
+              isPreviewOpen ? 'bg-accent' : 'bg-fg-faint'
             }`}
           />
-          {isPreviewOpen ? 'Hide Preview' : 'Show Preview'}
+          {isPreviewOpen ? 'プレビューを隠す' : 'プレビューを表示'}
         </button>
       </div>
     </header>

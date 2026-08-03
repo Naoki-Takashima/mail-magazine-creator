@@ -16,7 +16,7 @@ export function AddItemButton({ label, fullLabel, disabled, onClick }: AddItemBu
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="border-rule text-ink hover:border-vermilion hover:text-vermilion focus-visible:outline-vermilion disabled:hover:border-rule disabled:hover:text-ink w-full border border-dashed py-3 font-mono text-[11px] tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+      className="border-rule text-fg-soft hover:border-accent hover:bg-accent-soft hover:text-accent focus-visible:outline-accent disabled:hover:border-rule disabled:hover:text-fg-soft w-full rounded-lg border py-2.5 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
     >
       {disabled ? fullLabel : label}
     </button>

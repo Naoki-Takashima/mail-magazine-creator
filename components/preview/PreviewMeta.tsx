@@ -16,13 +16,11 @@ export function PreviewMeta({ deliveryDate }: PreviewMetaProps) {
   const isUnset = formattedDate === '';
 
   return (
-    <dl className="border-rule bg-paper/70 flex flex-wrap items-baseline gap-x-4 gap-y-1 border px-5 py-4">
-      <dt className="text-ink-faint w-20 shrink-0 font-mono text-[10px] tracking-[0.2em] uppercase">
-        配信日時
-      </dt>
+    <dl className="border-rule bg-canvas flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-xl border px-4 py-3">
+      <dt className="text-fg-soft w-16 shrink-0 text-[12px] font-medium">配信日時</dt>
       <dd
-        className={`font-display min-w-0 flex-1 text-[15px] break-words ${
-          isUnset ? 'text-ink-faint italic' : 'text-ink'
+        className={`min-w-0 flex-1 text-[14px] break-words ${
+          isUnset ? 'text-fg-faint' : 'text-fg'
         }`}
       >
         {formattedDate || UNSET_LABEL}

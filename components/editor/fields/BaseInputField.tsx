@@ -5,7 +5,6 @@ import { describedBy, fieldClassName, FormField } from '@/components/editor/Form
 export type FieldProps = {
   fieldId: string;
   label: string;
-  description?: string;
   value: string;
   error?: string;
   onChange: (value: string) => void;
@@ -23,24 +22,20 @@ type BaseInputFieldProps = FieldProps & {
 export function BaseInputField({
   fieldId,
   label,
-  description,
   value,
   error,
   onChange,
   inputProps,
 }: BaseInputFieldProps) {
   return (
-    <FormField label={label} fieldId={fieldId} description={description} error={error}>
+    <FormField label={label} fieldId={fieldId} error={error}>
       <input
         {...inputProps}
         id={fieldId}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error !== undefined}
-        aria-describedby={describedBy(fieldId, {
-          hasDescription: description !== undefined,
-          hasError: error !== undefined,
-        })}
+        aria-describedby={describedBy(fieldId, error !== undefined)}
         className={fieldClassName}
       />
     </FormField>

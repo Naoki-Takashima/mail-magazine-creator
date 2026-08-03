@@ -28,7 +28,7 @@ export function MailFrame({ html }: MailFrameProps) {
       title="メルマガのプレビュー"
       srcDoc={html}
       sandbox="allow-popups allow-popups-to-escape-sandbox"
-      className="bg-card absolute top-0 left-0 origin-top-left border-0"
+      className="bg-canvas absolute top-0 left-0 origin-top-left border-0"
       style={{
         width: `${MAIL_WIDTH}px`,
         // 縮小前の高さ。倍率を掛けるとちょうど枠の高さに戻る

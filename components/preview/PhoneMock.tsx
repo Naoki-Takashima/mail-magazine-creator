@@ -36,8 +36,8 @@ type FrameStyle = CSSProperties & Record<'--phone-scale', number>;
 /**
  * プレビューを載せるスマートフォンの枠。
  *
- * 実機そっくりのガラス表現やステータスバーは「紙の校正刷り」というテーマと
- * ぶつかるため入れていない。墨色のベゼル・角丸・落ち影1枚に絞った簡素な枠。
+ * 実機そっくりのガラス表現やステータスバーはミニマルなテーマとぶつかるため入れていない。
+ * ベゼル・角丸・落ち影1枚に絞った簡素な枠。
  *
  * 画面は iPhone 16 の縦横比（393:852）で固定し、**使える高さから逆算**して大きさを決める。
  * 高さに合わせて幅が変わり、幅が変わると中身の縮小率も変わる。
@@ -71,7 +71,7 @@ export function PhoneMock({ header, children }: PhoneMockProps) {
       {/* 計測対象は「端末に使える領域」そのもの。キャプションは外に出しておく */}
       <div ref={areaRef} className="flex min-h-0 w-full flex-1 items-center justify-center">
         <div
-          className="bg-ink flex flex-col rounded-[2.25rem] px-2.5 pt-2.5 pb-5 shadow-[0_30px_60px_-30px_rgba(23,21,15,0.65)] ring-1 ring-white/10 ring-inset"
+          className="bg-fg flex flex-col rounded-[2.25rem] px-2.5 pt-2.5 pb-5 shadow-[0_18px_40px_-24px_rgba(55,53,47,0.45)] ring-1 ring-white/10 ring-inset"
           style={frameStyle}
         >
           <div aria-hidden className="mx-auto mb-1.5 h-1 w-10 shrink-0 rounded-full bg-white/25" />
@@ -86,7 +86,7 @@ export function PhoneMock({ header, children }: PhoneMockProps) {
 
       {/* 今どのくらい縮んで見えているかが分かると、確認時に幅を誤解しない。
           比べる対象は画面幅ではなくカードの見た目の幅 */}
-      <p className="text-ink-faint mt-3 shrink-0 font-mono text-[10px] tracking-[0.2em] uppercase">
+      <p className="text-fg-faint mt-3 shrink-0 text-[12px] tabular-nums">
         {MAIL_WIDTH}px → {Math.round(MAIL_WIDTH * scale)}px
       </p>
     </div>

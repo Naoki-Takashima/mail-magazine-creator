@@ -22,15 +22,13 @@ export function ColumnButtonCard({
   onRemove,
 }: ColumnButtonCardProps) {
   return (
-    <div className="bg-paper border-rule border p-4">
+    <div className="bg-canvas border-rule rounded-lg border p-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">
-          Button {String(position + 1).padStart(2, '0')}
-        </span>
+        <span className="text-fg-soft text-[12px] font-medium">ボタン {position + 1}</span>
         <button
           type="button"
           onClick={() => onRemove(button.id)}
-          className="text-ink-soft hover:text-vermilion focus-visible:outline-vermilion font-mono text-[11px] tracking-[0.16em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="text-fg-faint hover:text-danger focus-visible:outline-accent rounded-md text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           削除
         </button>

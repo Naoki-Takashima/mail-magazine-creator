@@ -73,11 +73,8 @@ export function EditorPanel({
     >
       {/* プレビューを閉じて全幅になったときに行長が伸びすぎないよう、内側で幅を抑える */}
       <div className="mx-auto flex w-full max-w-2xl min-w-0 flex-col">
-        <header className="px-6 pt-8 pb-6 sm:px-8">
-          <p className="text-ink-faint font-mono text-[11px] tracking-[0.28em] uppercase">
-            Compose
-          </p>
-          <h2 id="editor-heading" className="font-display text-ink mt-2 text-2xl">
+        <header className="px-6 pt-10 pb-7 sm:px-8">
+          <h2 id="editor-heading" className="text-fg text-[22px] font-semibold">
             入力
           </h2>
         </header>
@@ -167,7 +164,7 @@ export function EditorPanel({
           />
         </div>
 
-        <p className="border-rule text-ink-faint border-t px-6 py-6 text-[12px] leading-relaxed sm:px-8">
+        <p className="border-rule text-fg-faint border-t px-6 py-6 text-[12px] leading-relaxed sm:px-8">
           入力内容はブラウザ上でのみ扱われ、どこにも保存・送信されません。
         </p>
       </div>

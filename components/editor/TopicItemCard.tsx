@@ -40,30 +40,23 @@ export function TopicItemCard({
   const summaryText = item.boldText.trim() || '（未入力）';
 
   return (
-    <details className="bg-paper border-rule group border" open={position === 0}>
+    <details className="bg-canvas border-rule group rounded-lg border" open={position === 0}>
       <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
         <span
           aria-hidden
-          className="text-ink-faint font-mono text-[10px] tracking-[0.24em] transition-transform group-open:rotate-90"
+          className="text-fg-faint text-[10px] transition-transform group-open:rotate-90"
         >
           ▶
         </span>
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.24em]">
-          {String(position + 1).padStart(2, '0')}
-        </span>
-        <span className="text-ink min-w-0 flex-1 truncate text-[13px]">{summaryText}</span>
-        {hasError ? (
-          <span className="text-vermilion font-mono text-[10px] tracking-[0.16em] uppercase">
-            要確認
-          </span>
-        ) : null}
+        <span className="text-fg-faint text-[12px] tabular-nums">{position + 1}</span>
+        <span className="text-fg min-w-0 flex-1 truncate text-[13px]">{summaryText}</span>
+        {hasError ? <span className="text-danger text-[11px] font-medium">要確認</span> : null}
       </summary>
 
       <div className="border-rule space-y-5 border-t p-4">
         <UrlField
           fieldId={idFor('image-url')}
           label="画像パス"
-          description="テキストの左に並びます（160px幅）。"
           value={item.imageUrl}
           error={errors?.imageUrl}
           onChange={change('imageUrl')}
@@ -72,7 +65,6 @@ export function TopicItemCard({
         <UrlField
           fieldId={idFor('url')}
           label="URL"
-          description="画像のリンク先です。"
           value={item.url}
           error={errors?.url}
           onChange={change('url')}
@@ -104,7 +96,7 @@ export function TopicItemCard({
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="text-ink-soft hover:text-vermilion focus-visible:outline-vermilion font-mono text-[11px] tracking-[0.16em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="text-fg-faint hover:text-danger focus-visible:outline-accent rounded-md text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             このトピックを削除
           </button>

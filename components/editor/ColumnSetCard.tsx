@@ -68,15 +68,13 @@ export function ColumnSetCard({
   const isButtonsFull = set.buttons.length >= MAX_COLUMN_BUTTONS;
 
   return (
-    <div className="bg-paper-sunk border-rule border p-5 sm:p-6">
+    <div className="bg-canvas-sunk border-rule rounded-xl border p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">
-          Set {String(position + 1).padStart(2, '0')}
-        </span>
+        <span className="text-fg-soft text-[12px] font-medium">セット {position + 1}</span>
         <button
           type="button"
           onClick={() => onRemoveSet(set.id)}
-          className="text-ink-soft hover:text-vermilion focus-visible:outline-vermilion font-mono text-[11px] tracking-[0.16em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="text-fg-faint hover:text-danger focus-visible:outline-accent rounded-md text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           セットを削除
         </button>
@@ -93,8 +91,8 @@ export function ColumnSetCard({
 
       <div className="border-rule mt-6 border-t pt-5">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">Items</p>
-          <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
+          <p className="text-fg-soft text-[12px] font-medium">アイテム</p>
+          <span className="text-fg-faint text-[12px] tabular-nums">
             {set.items.length} / {MAX_COLUMN_ITEMS}
           </span>
         </div>
@@ -126,16 +124,11 @@ export function ColumnSetCard({
 
       <div className="border-rule mt-6 border-t pt-5">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-ink-faint font-mono text-[10px] tracking-[0.24em] uppercase">
-            Buttons
-          </p>
-          <span className="text-ink-faint font-mono text-[10px] tracking-[0.16em]">
+          <p className="text-fg-soft text-[12px] font-medium">ボタン</p>
+          <span className="text-fg-faint text-[12px] tabular-nums">
             {set.buttons.length} / {MAX_COLUMN_BUTTONS}
           </span>
         </div>
-        <p className="text-ink-soft mt-1.5 text-[13px] leading-relaxed">
-          アイテムの後ろに、コンテンツ幅いっぱいで縦に積まれます。
-        </p>
 
         <div className="mt-4 space-y-3">
           {set.buttons.map((button, buttonPosition) => (

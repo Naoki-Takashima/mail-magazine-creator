@@ -11,38 +11,35 @@ const REASON_ID = 'export-blocked-reason';
 /**
  * 入力の最後に置く HTML 出力ブロック。
  *
- * 01〜09 の入力ブロックとは役割が違うので EditorSection（番号 + 必須バッジ）は使わず、
- * 独立した節として組む。ボタンは唯一の主要アクションなので、
- * 「+ 追加」の破線ボタンとは変えて朱の実線にしている。
+ * 入力ブロックとは役割が違うので EditorSection（必須マーク付きの見出し）は使わず、
+ * 独立した節として組む。唯一の主要アクションなので、
+ * 他のボタンとは変えてアクセント色で塗る。
  */
 export function ExportSection({ fileName, blockedReason, onExport }: ExportSectionProps) {
   const isBlocked = blockedReason !== null;
 
   return (
-    <section className="border-rule border-t px-6 py-7 sm:px-8">
-      <p className="text-ink-faint font-mono text-[11px] tracking-[0.28em] uppercase">Export</p>
-      <h3 className="font-display text-ink mt-2 text-lg">HTML出力</h3>
-      <p className="text-ink-soft mt-2 text-[13px] leading-relaxed">
-        入力内容を1枚のHTMLファイルとして書き出します。ファイル名は配信日時になります。
-      </p>
+    <section className="border-rule border-t px-6 py-9 sm:px-8">
+      <h3 className="text-fg text-[15px] font-semibold">HTML出力</h3>
 
-      <div className="mt-6">
+      <div className="mt-5">
         <button
           type="button"
           onClick={onExport}
           disabled={isBlocked}
           aria-describedby={isBlocked ? REASON_ID : undefined}
-          className="bg-vermilion focus-visible:outline-vermilion w-full border border-transparent py-3.5 font-mono text-[11px] tracking-[0.18em] text-white uppercase transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:opacity-30"
+          className="bg-accent focus-visible:outline-accent w-full rounded-lg py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:opacity-30"
         >
           HTMLを出力
         </button>
 
         {isBlocked ? (
-          <p id={REASON_ID} className="text-vermilion mt-2.5 text-[13px] leading-relaxed">
+          <p id={REASON_ID} className="text-danger mt-2 text-[12px]">
             {blockedReason}
           </p>
         ) : (
-          <p className="text-ink-faint mt-2.5 font-mono text-[11px] tracking-[0.1em]">{fileName}</p>
+          // 桁が揃うとファイル名を読み取りやすいので、ここだけ等幅にする
+          <p className="text-fg-faint mt-2 font-mono text-[12px]">{fileName}</p>
         )}
       </div>
     </section>

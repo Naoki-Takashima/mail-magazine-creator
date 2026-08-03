@@ -14,7 +14,6 @@ type ColorFieldProps = FieldProps & {
 export function ColorField({
   fieldId,
   label,
-  description,
   value,
   error,
   onChange,
@@ -23,8 +22,8 @@ export function ColorField({
   const pickerId = `${fieldId}-picker`;
 
   return (
-    <FormField label={label} fieldId={fieldId} description={description} error={error}>
-      <div className="flex items-end gap-3">
+    <FormField label={label} fieldId={fieldId} error={error}>
+      <div className="flex items-center gap-2.5">
         <input
           id={pickerId}
           type="color"
@@ -32,7 +31,7 @@ export function ColorField({
           value={toColorPickerValue(value, fallbackColor)}
           onChange={(event) => onChange(event.target.value)}
           aria-label={`${label}をカラーピッカーで選ぶ`}
-          className="border-rule size-9 shrink-0 cursor-pointer border bg-transparent p-1"
+          className="border-rule size-9 shrink-0 cursor-pointer rounded-lg border bg-transparent p-1"
         />
         <input
           id={fieldId}
@@ -43,10 +42,8 @@ export function ColorField({
           onChange={(event) => onChange(event.target.value)}
           placeholder={fallbackColor}
           aria-invalid={error !== undefined}
-          aria-describedby={describedBy(fieldId, {
-            hasDescription: description !== undefined,
-            hasError: error !== undefined,
-          })}
+          aria-describedby={describedBy(fieldId, error !== undefined)}
+          // 桁が揃うと色コードを読み比べやすいので、ここだけ等幅にする
           className={`${fieldClassName} font-mono`}
         />
       </div>

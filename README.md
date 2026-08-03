@@ -76,15 +76,15 @@ npm run dev      # http://localhost:3000
 
 ```
 app/
-├── layout.tsx            フォント読み込みと metadata
+├── layout.tsx            metadata とビューポート固定の body
 ├── page.tsx              Server Component。シェルのみ
-└── globals.css           Tailwind テーマ定義
+└── globals.css           テーマトークン（色・フォント）
 components/
 ├── AppHeader.tsx         ワードマーク + プレビュー開閉トグル
 ├── MailEditor.tsx        'use client'。唯一の状態保持者
 ├── editor/
-│   ├── EditorSection.tsx     ブロックの枠（番号・見出し・必須バッジ）
-│   ├── FormField.tsx         ラベル / 補足 / エラーの a11y 結線
+│   ├── EditorSection.tsx     ブロックの枠（見出し・必須マーク）
+│   ├── FormField.tsx         ラベル / エラーの a11y 結線 + 入力欄の共通クラス
 │   ├── AddItemButton.tsx     「+ 追加 / 上限N件」の共通ボタン
 │   ├── ExportSection.tsx     HTML出力ボタン（入力の最後）
 │   ├── TitleFields.tsx       タイトル + タイトル文字色（05〜08 で共用）
@@ -113,6 +113,24 @@ types/mail.ts
 ```
 
 ## 設計メモ
+
+### 色は必ずトークン経由で参照する
+
+見た目は「白とライトグレー + アクセント1色」のミニマル。生の hex はコンポーネントに書かず、`app/globals.css` の `@theme` に置いた意味づけ済みトークンだけを使う。
+
+| トークン                      | 用途                           |
+| ----------------------------- | ------------------------------ |
+| `canvas` / `canvas-sunk`      | 地の面 / 一段沈めた面          |
+| `fg` / `fg-soft` / `fg-faint` | 本文 / ラベル / プレースホルダ |
+| `rule`                        | 罫線                           |
+| `accent` / `accent-soft`      | ボタン・フォーカス / 淡い面    |
+| `danger`                      | エラー                         |
+
+このおかげで、テーマを「紙の校正刷り」からミニマルへ刷新したときも**値の差し替えが中心**で済み、コンポーネント側は形（角丸・余白）の調整だけで足りた。
+
+**`lib/buildMailHtml.ts` が出すメール本文の色はこのトークンとは無関係**。配信物そのものなので、アプリのテーマを変えても一切影響しない。
+
+入力ブロックは枠で囲わない（9つ並ぶと枠が主張しすぎる）。面はすべて白のまま、余白と 1px の区切り線で境界を示し、入れ子の階層だけ `canvas-sunk` の角丸カードで表す。
 
 ### レイアウトはアプリシェル固定（lg 以上）
 
