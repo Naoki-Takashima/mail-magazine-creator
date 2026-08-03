@@ -1,5 +1,7 @@
 import { MailFrame } from '@/components/preview/MailFrame';
+import { PhoneMock } from '@/components/preview/PhoneMock';
 import { PreviewMeta } from '@/components/preview/PreviewMeta';
+import { SubjectBar } from '@/components/preview/SubjectBar';
 
 type PreviewPanelProps = {
   html: string;
@@ -11,40 +13,43 @@ type PreviewPanelProps = {
 };
 
 /**
- * プレビューの「額縁」。メール本文の描画は MailFrame に委譲する。
- * 用紙を沈めた色 + 方眼テクスチャの上に白いメール本体を置き、
- * 校正台にメールを1枚載せたような見え方にしている。
+ * プレビューの「額縁」。メール本文の描画は PhoneMock + MailFrame に委譲する。
+ * 用紙を沈めた色 + 方眼テクスチャの上にスマートフォンを1台置いた見え方。
+ *
+ * lg 以上ではこの列がビューポート高に固定される。縦の取り合いは
+ * メタ欄が shrink-0、端末枠が残り全部（flex-1 + min-h-0）。
+ * min-h-0 を落とすと中身の高さが列を押し広げて固定が壊れるので消さないこと。
  */
 export function PreviewPanel({ html, deliveryDate, subject, panelId }: PreviewPanelProps) {
   return (
     <section
       id={panelId}
-      aria-labelledby="preview-heading"
-      className="bg-paper-sunk texture-grid border-rule relative flex min-w-0 flex-col border-t lg:border-t-0 lg:border-l"
+      aria-label="プレビュー"
+      className="bg-paper-sunk texture-grid border-rule relative flex min-w-0 flex-col border-t lg:h-full lg:min-h-0 lg:border-t-0 lg:border-l"
     >
       {/* 縦組みのラベル。パネルの左端に沿わせて版面のアクセントにする */}
       <span
         aria-hidden
-        className="text-ink-faint pointer-events-none absolute top-8 left-3 hidden font-mono text-[10px] tracking-[0.4em] uppercase [writing-mode:vertical-rl] lg:block"
+        className="text-ink-faint pointer-events-none absolute top-6 left-3 hidden font-mono text-[10px] tracking-[0.4em] uppercase [writing-mode:vertical-rl] lg:block"
       >
         Live Preview
       </span>
 
-      <header className="px-6 pt-8 pb-6 sm:px-10 lg:pl-14">
-        <p className="text-ink-faint font-mono text-[11px] tracking-[0.28em] uppercase">Render</p>
-        <h2 id="preview-heading" className="font-display text-ink mt-2 text-2xl">
-          プレビュー
-        </h2>
-      </header>
-
-      <div className="px-4 pb-5 sm:px-10 lg:pl-14">
-        <PreviewMeta deliveryDate={deliveryDate} subject={subject} />
+      {/* 見出しは置かない。浮いた高さはそのまま端末枠の高さに回す */}
+      <div className="shrink-0 px-4 pt-6 pb-4 sm:px-10 lg:pl-14">
+        <PreviewMeta deliveryDate={deliveryDate} />
       </div>
 
-      <div className="flex-1 px-4 pb-8 sm:px-10 lg:pl-14">
-        <div className="border-rule h-full overflow-hidden border shadow-[0_18px_40px_-28px_rgba(23,21,15,0.55)]">
+      {/*
+        lg 未満は縦積みなので、列の高さが中身で決まらない。
+        端末枠に高さを与えないと潰れるため 70vh を直接指定する
+        （1画面に2つのスクロール領域を作らないよう、100vh にはしない）。
+      */}
+      <div className="h-[70vh] min-h-0 grow basis-auto px-4 pb-6 sm:px-10 lg:h-auto lg:basis-0 lg:pl-14">
+        {/* 件名はデバウンスせず即時反映する（iframe の外なので再読み込みが起きない） */}
+        <PhoneMock header={<SubjectBar subject={subject} />}>
           <MailFrame html={html} />
-        </div>
+        </PhoneMock>
       </div>
     </section>
   );

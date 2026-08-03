@@ -134,7 +134,10 @@ export function MailEditor() {
   const errors = useMemo(() => validateMailData(mailData), [mailData]);
 
   const debouncedMailData = useDebouncedValue(mailData, PREVIEW_DEBOUNCE_MS);
-  const mailHtml = useMemo(() => buildMailHtml(debouncedMailData), [debouncedMailData]);
+  const mailHtml = useMemo(
+    () => buildMailHtml(debouncedMailData, { forPreview: true }),
+    [debouncedMailData],
+  );
 
   return (
     <>
@@ -144,11 +147,11 @@ export function MailEditor() {
         onTogglePreview={togglePreview}
       />
 
+      {/* lg 以上は min-h-0 が必須。落とすとエディタの中身が main を押し広げ、
+          プレビューがビューポートからはみ出す */}
       <main
-        className={`grid flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-out ${
-          isPreviewOpen
-            ? 'lg:grid-cols-[minmax(380px,0.85fr)_1.15fr]'
-            : 'lg:grid-cols-[minmax(0,1fr)]'
+        className={`grid flex-1 grid-cols-1 transition-[grid-template-columns] duration-500 ease-out lg:min-h-0 ${
+          isPreviewOpen ? 'lg:grid-cols-[minmax(380px,6fr)_4fr]' : 'lg:grid-cols-[minmax(0,1fr)]'
         }`}
       >
         <EditorPanel

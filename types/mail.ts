@@ -136,8 +136,21 @@ export const DEFAULT_BUTTON_TEXT_COLOR = '#ffffff';
 export const DEFAULT_BUTTON_BG_COLOR = '#000000';
 export const DEFAULT_TEXT_COLOR = '#000000';
 
-/** メール本文のコンテンツ幅（600px から左右の余白 24px を引いた値） */
+/**
+ * メール本体（カード）の幅。HTML生成とプレビューの縮小率の両方がこの値を基準にするため、
+ * ここを唯一の出どころにする。
+ */
+export const MAIL_WIDTH = 600;
+
+/** メール本文のコンテンツ幅（MAIL_WIDTH から左右の余白 24px を引いた値） */
 export const MAIL_CONTENT_WIDTH = 552;
+
+/**
+ * メール本体の外側（body）の余白。配信用HTMLでのみ使う。
+ * プレビューはカードを端末画面の端まで広げるため、この余白を持たせない。
+ */
+export const MAIL_BODY_PADDING_Y = 24;
+export const MAIL_BODY_PADDING_X = 12;
 
 /** トピックスの横並びレイアウト（合計 MAIL_CONTENT_WIDTH） */
 export const TOPIC_IMAGE_WIDTH = 160;

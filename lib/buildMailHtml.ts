@@ -7,7 +7,10 @@ import {
   DEFAULT_BUTTON_TEXT_COLOR,
   DEFAULT_TEXT_COLOR,
   INFO_LINK_COLOR,
+  MAIL_BODY_PADDING_X,
+  MAIL_BODY_PADDING_Y,
   MAIL_CONTENT_WIDTH,
+  MAIL_WIDTH,
   TOPIC_GAP_WIDTH,
   TOPIC_IMAGE_WIDTH,
   TOPIC_TEXT_WIDTH,
@@ -25,7 +28,6 @@ import {
   type TopicsBlock,
 } from '@/types/mail';
 
-const MAIL_WIDTH = 600;
 const MAIL_PADDING = 24;
 const CONTENT_WIDTH = MAIL_CONTENT_WIDTH;
 
@@ -34,10 +36,9 @@ const CONTENT_WIDTH = MAIL_CONTENT_WIDTH;
  * レイアウトは table、装飾はインライン style で組む。
  */
 const STYLES = {
-  body: `margin:0;padding:24px 12px;background-color:#f3f4f6;-webkit-font-smoothing:antialiased;`,
   wrapper: `width:100%;border-collapse:collapse;`,
   card: `width:${MAIL_WIDTH}px;max-width:100%;border-collapse:collapse;background-color:#ffffff;border:1px solid #e5e7eb;`,
-  cell: `padding:${MAIL_PADDING}px;font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1f2937;`,
+  cell: `padding:${MAIL_PADDING}px;font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;font-size:15px;line-height:1.8;color:#1f2937;`,
   stripCell: `padding:0;font-size:0;line-height:0;`,
   stripImage: `display:block;width:100%;max-width:${MAIL_WIDTH}px;height:auto;border:0;`,
   largeImage: `display:block;width:100%;max-width:${CONTENT_WIDTH}px;height:auto;border:0;outline:1px solid #e5e7eb;`,
@@ -369,7 +370,34 @@ function buildPlaceholderBlock(): string {
  * React に依存しないので、将来「HTMLをコピー / ダウンロード」を追加するときは
  * この関数をそのまま再利用できる。
  */
-export function buildMailHtml(data: MailData): string {
+export type BuildMailHtmlOptions = {
+  /**
+   * プレビュー（端末画面）用に組む。
+   *
+   * - body の余白を落として、カードを画面の端まで広げる
+   * - スクロールバーを隠す。幅を取る種類のスクロールバーだと body が細くなり、
+   *   カードが 600px まで伸びられず、カラムボックスの固定幅セルがはみ出すため
+   *
+   * 実際に配信する HTML では既定（false）のまま使う。
+   */
+  forPreview?: boolean;
+};
+
+/** プレビューでだけ効かせるスタイル。配信用HTMLには入れない */
+const PREVIEW_STYLE = `<style>
+      html { scrollbar-width: none; }
+      html::-webkit-scrollbar { display: none; }
+    </style>`;
+
+function buildBodyStyle(forPreview: boolean): string {
+  // 端末画面ではカードを端まで広げたいので、プレビューでは body の余白を持たせない
+  const padding = forPreview ? '' : `padding:${MAIL_BODY_PADDING_Y}px ${MAIL_BODY_PADDING_X}px;`;
+
+  return `margin:0;${padding}background-color:#f3f4f6;-webkit-font-smoothing:antialiased;`;
+}
+
+export function buildMailHtml(data: MailData, options: BuildMailHtmlOptions = {}): string {
+  const { forPreview = false } = options;
   const blocks = [
     buildStripBannerBlock(data.stripBanner),
     ...data.largeBanners.map(buildLargeBannerBlock),
@@ -387,9 +415,9 @@ export function buildMailHtml(data: MailData): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>メルマガプレビュー</title>
+    <title>メルマガプレビュー</title>${forPreview ? `\n    ${PREVIEW_STYLE}` : ''}
   </head>
-  <body style="${STYLES.body}">
+  <body style="${buildBodyStyle(forPreview)}">
     <table role="presentation" style="${STYLES.wrapper}">
       <tr>
         <td align="center">

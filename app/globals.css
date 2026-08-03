@@ -15,16 +15,37 @@
   --color-rule: #d8d1c1;
   --color-vermilion: #c1440e;
 
-  --font-display: var(--font-display-serif), 'Hiragino Mincho ProN', 'Yu Mincho', serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-sans:
-    'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', Meiryo, system-ui, sans-serif;
+  /*
+   * フォントは1系統に統一する。
+   * font-display / font-mono も同じスタックを指すので、
+   * クラス名（font-display / font-mono）は字送りや太さの意味づけとして残しつつ、
+   * 書体は全体で揃う。
+   */
+  --font-sans: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+
+  /*
+   * プレビューの縮小率のフォールバック。
+   * 実際の値は PhoneMock が端末枠に使える実寸から計算してインラインで上書きする
+   * （iPhone 16 の縦横比を保ったまま高さに収めるため、CSS だけでは決められない）。
+   * カード 600px を iPhone 16 の論理幅 393px に収めたときの値。
+   */
+  --phone-scale: 0.655;
 }
 
 body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/*
+ * lg 以上ではページ全体ではなくエディタ列がスクロールを担当する。
+ * スクロールバーの出入りで入力欄の幅が揺れないよう、溝を常時確保しておく。
+ */
+.editor-scroll {
+  scrollbar-gutter: stable;
 }
 
 /* 方眼紙のような下地。用紙感を出すための控えめなテクスチャ */
