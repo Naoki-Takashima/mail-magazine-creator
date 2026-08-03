@@ -5,6 +5,7 @@ import {
 import type { ColumnSetHandlers } from '@/components/editor/ColumnSetCard';
 import { ColumnSetSection } from '@/components/editor/ColumnSetSection';
 import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
+import { ExportSection } from '@/components/editor/ExportSection';
 import { InfoLinksSection, type InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
 import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
 import { StripBannerSection } from '@/components/editor/StripBannerSection';
@@ -34,6 +35,11 @@ type EditorPanelProps = {
   bottomBannerHandlers: BottomBannerHandlers;
   topicsHandlers: TopicsHandlers;
   infoLinksHandlers: InfoLinksHandlers;
+  /** 出力されるファイル名。出力できない状態なら null */
+  exportFileName: string | null;
+  /** 出力できない理由。null なら出力できる */
+  exportBlockedReason: string | null;
+  onExport: () => void;
 };
 
 /**
@@ -53,6 +59,9 @@ export function EditorPanel({
   bottomBannerHandlers,
   topicsHandlers,
   infoLinksHandlers,
+  exportFileName,
+  exportBlockedReason,
+  onExport,
 }: EditorPanelProps) {
   return (
     // lg 以上ではページ全体ではなくこの列がスクロールを担当する
@@ -147,6 +156,14 @@ export function EditorPanel({
             links={data.infoLinks}
             errors={errors.infoLinks}
             {...infoLinksHandlers}
+          />
+        </div>
+
+        <div className="animate-rise" style={{ animationDelay: '600ms' }}>
+          <ExportSection
+            fileName={exportFileName}
+            blockedReason={exportBlockedReason}
+            onExport={onExport}
           />
         </div>
 

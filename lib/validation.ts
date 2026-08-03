@@ -166,6 +166,14 @@ function validateInfoLink(link: { url: string }): InfoLinkErrors | undefined {
  * 必須項目（配信日・件名）は未入力自体をエラーにする。
  * バナー系は任意入力なので「入力されているが不正」のときだけエラーを返す。
  */
+/**
+ * エラーが1件でもあれば true。
+ * validateMailData は中身が空のキーを省いて返すので、トップレベルの鍵の数だけ見れば足りる。
+ */
+export function hasValidationErrors(errors: ValidationErrors): boolean {
+  return Object.keys(errors).length > 0;
+}
+
 export function validateMailData(data: MailData): ValidationErrors {
   const errors: ValidationErrors = {};
 

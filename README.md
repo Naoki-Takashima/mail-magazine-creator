@@ -4,7 +4,7 @@
 
 左が入力、右がプレビュー。入力すると約200msでプレビューが更新され、ページのリロードは不要。プレビューは開閉できる。
 
-プレビューはスマートフォンの枠に載せた状態で**常に画面内に固定**され、入力をどれだけ下へ進めても隠れない。
+プレビューはスマートフォンの枠に載せた状態で**常に画面内に固定**され、入力をどれだけ下へ進めても隠れない。入力の最後にある「HTMLを出力」で、`YYYYMMDD_hhmm.html`（配信日時）としてダウンロードできる。
 
 ## 入力ブロック
 
@@ -86,6 +86,7 @@ components/
 │   ├── EditorSection.tsx     ブロックの枠（番号・見出し・必須バッジ）
 │   ├── FormField.tsx         ラベル / 補足 / エラーの a11y 結線
 │   ├── AddItemButton.tsx     「+ 追加 / 上限N件」の共通ボタン
+│   ├── ExportSection.tsx     HTML出力ボタン（入力の最後）
 │   ├── TitleFields.tsx       タイトル + タイトル文字色（05〜08 で共用）
 │   ├── ButtonFields.tsx      ボタンの4入力（05 / 06 / 08 で共用）
 │   ├── fields/               入力欄の共通部品（Text / Url / DateTime / Color）
@@ -100,7 +101,8 @@ components/
 lib/
 ├── buildMailHtml.ts      MailData → HTMLメール文字列（純関数）
 ├── mailReducer.ts        入力状態の更新（純関数）
-├── deliveryDate.ts       YYYYMMDDhhmm ⇄ datetime-local ⇄ 表示用文字列
+├── deliveryDate.ts       YYYYMMDDhhmm ⇄ datetime-local ⇄ 表示用文字列 / ファイル名
+├── downloadHtml.ts       文字列を .html としてダウンロード
 ├── color.ts              色コードのサニタイズ
 ├── escapeHtml.ts         HTMLエスケープ
 └── validation.ts         必須チェック / URL検証
@@ -136,6 +138,14 @@ flex/grid の子は既定で `min-height:auto`（中身より小さくならな�
 配信用のHTML（既定）は従来どおり `padding:24px 12px` を持ち、スクロールバー用のスタイルも入らない。
 
 `zoom` を使わないのは、iframe 内部のレイアウト幅まで変わってしまい「600px のメールとしての見た目」を保証できないため。縦スクロールは iframe が自前で持つので、親側にスクロール領域は作っていない。
+
+### HTML出力は配信用のHTMLを書き出す
+
+出力するのは `buildMailHtml(data)`（オプション無し = 配信用）。プレビュー用との差は `body` の余白とスクロールバー用CSSだけで、**本文の中身は完全に同一**。件名は本文には出さず `<title>` に入れる。
+
+ボタンは**バリデーションエラーが1件でも残っていれば disabled**。配信日時が無いとファイル名を作れないうえ、URLエラーを抱えたまま「リンクが抜けたHTML」を書き出す事故も防げる。理由は必須の欠け → URLエラーの順に1つだけ出す。
+
+ダウンロードは Blob と `<a download>` だけ。サーバーには何も送らない。
 
 ### 件名は iframe の外に固定する
 
@@ -189,7 +199,7 @@ flex/grid の子は既定で `min-height:auto`（中身より小さくならな�
 
 ## 今後の拡張
 
-- HTMLソースのコピー / `.html` ダウンロード
+- HTMLソースのクリップボードコピー
 - 大バナーの並べ替え（`mailReducer` に `moveLargeBanner` を追加）
 - テンプレート切替、localStorage への下書き保存
 - PC / スマホのプレビュー幅切替（`--phone-scale` の差し替えで実現できる）

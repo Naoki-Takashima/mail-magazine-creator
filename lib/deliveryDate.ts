@@ -53,6 +53,15 @@ export function toDatetimeLocalValue(compact: string): string {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+/**
+ * '202608031000' → '20260803_1000'。不正な入力は null を返す。
+ * HTML出力のファイル名に使う。検証済みの数字だけなので、区切り文字が混ざる余地はない。
+ */
+export function toFileNameDateTime(compact: string): string | null {
+  if (!isValidCompactDateTime(compact)) return null;
+  return `${compact.slice(0, 8)}_${compact.slice(8)}`;
+}
+
 /** '202608031000' → '2026年8月3日(月) 10:00'。不正な入力は '' を返す */
 export function formatDeliveryDate(compact: string): string {
   const parts = parseCompact(compact);

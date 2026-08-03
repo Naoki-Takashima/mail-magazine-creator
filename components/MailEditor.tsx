@@ -10,8 +10,10 @@ import type { TopicsHandlers } from '@/components/editor/TopicsSection';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { buildMailHtml } from '@/lib/buildMailHtml';
+import { toFileNameDateTime } from '@/lib/deliveryDate';
+import { downloadHtml } from '@/lib/downloadHtml';
 import { mailReducer, type MailAction } from '@/lib/mailReducer';
-import { validateMailData } from '@/lib/validation';
+import { hasValidationErrors, validateMailData } from '@/lib/validation';
 import {
   INITIAL_MAIL_DATA,
   type ColumnVariant,
@@ -139,6 +141,24 @@ export function MailEditor() {
     [debouncedMailData],
   );
 
+  // 出力できない理由。必須の欠けを先に出し、それが埋まったらURLのエラーを出す
+  const exportBlockedReason = useMemo(() => {
+    if (errors.deliveryDate || errors.subject) return '配信日と件名を入力してください';
+    if (hasValidationErrors(errors)) return 'URLのエラーを直してください';
+    return null;
+  }, [errors]);
+
+  const exportFileName = useMemo(() => {
+    const stamp = toFileNameDateTime(mailData.deliveryDate);
+    return stamp === null ? null : `${stamp}.html`;
+  }, [mailData.deliveryDate]);
+
+  // プレビューは200ms遅れるが、出力は押した瞬間の内容にしたいのでデバウンス前を使う
+  const exportHtml = useCallback(() => {
+    if (exportFileName === null) return;
+    downloadHtml(exportFileName, buildMailHtml(mailData));
+  }, [exportFileName, mailData]);
+
   return (
     <>
       <AppHeader
@@ -167,6 +187,9 @@ export function MailEditor() {
           bottomBannerHandlers={bottomBannerHandlers}
           topicsHandlers={topicsHandlers}
           infoLinksHandlers={infoLinksHandlers}
+          exportFileName={exportFileName}
+          exportBlockedReason={exportBlockedReason}
+          onExport={exportHtml}
         />
         {isPreviewOpen ? (
           <PreviewPanel

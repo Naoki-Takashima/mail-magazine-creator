@@ -383,6 +383,9 @@ export type BuildMailHtmlOptions = {
   forPreview?: boolean;
 };
 
+/** 件名が空のときの <title>。ファイルを開いたときに何のHTMLか分かる程度の文言 */
+const DEFAULT_TITLE = 'メルマガ';
+
 /** プレビューでだけ効かせるスタイル。配信用HTMLには入れない */
 const PREVIEW_STYLE = `<style>
       html { scrollbar-width: none; }
@@ -415,7 +418,7 @@ export function buildMailHtml(data: MailData, options: BuildMailHtmlOptions = {}
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>メルマガプレビュー</title>${forPreview ? `\n    ${PREVIEW_STYLE}` : ''}
+    <title>${escapeHtml(data.subject.trim()) || DEFAULT_TITLE}</title>${forPreview ? `\n    ${PREVIEW_STYLE}` : ''}
   </head>
   <body style="${buildBodyStyle(forPreview)}">
     <table role="presentation" style="${STYLES.wrapper}">
