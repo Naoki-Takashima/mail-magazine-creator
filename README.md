@@ -1,8 +1,21 @@
 # mail-magazine-creator
 
-メルマガのコンテンツ（URL / 画像URL / テキスト）を入力すると、HTMLメールとしての見た目をその場で確認できるツール。
+メルマガのコンテンツを入力すると、HTMLメールとしての見た目をその場で確認できるツール。
 
 左が入力、右がプレビュー。入力すると約200msでプレビューが更新され、ページのリロードは不要。プレビューは開閉できる。
+
+## 入力ブロック
+
+| #   | ブロック            | 入力                                                          | 必須 | メール本文への出力                                         |
+| --- | ------------------- | ------------------------------------------------------------- | ---- | ---------------------------------------------------------- |
+| 01  | 配信日              | 日時（内部表現は `YYYYMMDDhhmm`）                             | ○    | 出さない（プレビュー上部のメタ欄に表示）                   |
+| 02  | 件名                | テキスト                                                      | ○    | 出さない（プレビュー上部のメタ欄に表示）                   |
+| 03  | 帯バナー（最大1件） | 画像パス / URL                                                | −    | メール最上部に600px全幅の画像。URLがあれば画像全体がリンク |
+| 04  | 大バナー（最大3件） | 画像パス / URL / ボタンURL / ボタンテキスト / 文字色 / 背景色 | −    | 1カラムで縦積み。画像＋任意のボタン                        |
+
+- バナーは**画像だけでも表示**される（URL未入力ならリンクなし）。URLだけで画像が無い場合は何も出力しない
+- 大バナーのボタンは、ボタンテキストがあり、かつ「ボタンURL または バナーURL」が有効なときだけ出力される（ボタンURLが空ならバナーURLを流用）
+- ボタンの既定色は 文字 `#ffffff` / 背景 `#000000`
 
 ## 使い方
 
@@ -39,12 +52,21 @@ app/
 components/
 ├── AppHeader.tsx         ワードマーク + プレビュー開閉トグル
 ├── MailEditor.tsx        'use client'。唯一の状態保持者
-├── editor/               入力欄（状態を持たない）
-└── preview/              プレビュー（状態を持たない）
+├── editor/
+│   ├── EditorSection.tsx     ブロックの枠（番号・見出し・必須バッジ）
+│   ├── FormField.tsx         ラベル / 補足 / エラーの a11y 結線
+│   ├── fields/               入力欄の共通部品（Text / Url / DateTime / Color）
+│   └── *Section.tsx          4ブロックそれぞれの組み立て
+└── preview/
+    ├── PreviewMeta.tsx       配信日時・件名（iframe の外）
+    └── MailFrame.tsx         iframe srcDoc レンダラ
 lib/
 ├── buildMailHtml.ts      MailData → HTMLメール文字列（純関数）
+├── mailReducer.ts        入力状態の更新（純関数）
+├── deliveryDate.ts       YYYYMMDDhhmm ⇄ datetime-local ⇄ 表示用文字列
+├── color.ts              色コードのサニタイズ
 ├── escapeHtml.ts         HTMLエスケープ
-└── validation.ts         URL検証
+└── validation.ts         必須チェック / URL検証
 hooks/useDebouncedValue.ts
 types/mail.ts
 ```
@@ -63,18 +85,22 @@ types/mail.ts
 
 ### XSS対策
 
-ユーザー入力はすべて `escapeHtml` を通し、URLは `http:` / `https:` のみ許可する（`javascript:` や `data:` は描画しない）。テキスト欄に `<script>alert(1)</script>` を入れても、文字列として表示されるだけ。
+- ユーザー入力はすべて `escapeHtml` を通す
+- URLは `http:` / `https:` のみ許可（`javascript:` や `data:` は描画しない）
+- **色は `escapeHtml` では守れない**。`style` 属性に差し込むため、`red;background:url(...)` のような値が別の宣言として解釈されないよう、`toSafeHexColor` で `#rgb` / `#rrggbb` 以外は既定色に倒している
 
-### 状態管理は `useState` のみ
+ボタンテキストに `<script>alert(1)</script>` を入れても、文字列として表示されるだけ。
 
-状態は入力3値 + 開閉フラグだけで、受け渡しも `MailEditor → EditorPanel → 各Input` の2階層に収まる。Context や外部ライブラリは、複数の離れたコンポーネントが同じ状態を読む状況になってから検討する。
+### 状態管理は `useReducer`
 
-デバウンスはプレビュー側だけに掛けている（iframe の `srcDoc` 差し替えは再読み込みを伴うため）。入力欄自体は controlled のまま即時反映され、打鍵の遅延はない。
+状態はネスト（帯バナー）と可変長配列（大バナー）を含むため、更新ロジックを純関数 `lib/mailReducer.ts` に切り出して `useReducer` で束ねている。値を読むのは `EditorPanel` と `PreviewPanel` の2つだけなので、Context や状態管理ライブラリは使っていない。
+
+デバウンスはプレビューの iframe だけに掛けている（`srcDoc` の差し替えは再読み込みを伴うため）。入力欄とメタ欄は controlled のまま即時反映され、打鍵の遅延はない。
 
 ## 今後の拡張
 
 - HTMLソースのコピー / `.html` ダウンロード
-- 複数ブロックの追加・並べ替え（このタイミングで `useReducer` + zod を検討）
+- 大バナーの並べ替え（`mailReducer` に `moveLargeBanner` を追加）
 - テンプレート切替、localStorage への下書き保存
 - PC / スマホのプレビュー幅切替
-- `buildMailHtml` と `validation` の単体テスト（Vitest）
+- `lib/` 配下の純関数の単体テスト（Vitest）

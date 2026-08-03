@@ -1,8 +1,17 @@
-import { escapeHtml, nl2br } from '@/lib/escapeHtml';
+import { toSafeHexColor } from '@/lib/color';
+import { escapeHtml } from '@/lib/escapeHtml';
 import { toSafeHttpUrl } from '@/lib/validation';
-import type { MailData } from '@/types/mail';
+import {
+  DEFAULT_BUTTON_BG_COLOR,
+  DEFAULT_BUTTON_TEXT_COLOR,
+  type LargeBanner,
+  type MailData,
+  type StripBanner,
+} from '@/types/mail';
 
 const MAIL_WIDTH = 600;
+const MAIL_PADDING = 24;
+const CONTENT_WIDTH = MAIL_WIDTH - MAIL_PADDING * 2;
 
 /**
  * メールクライアント（Gmail / Outlook 等）は <head> の CSS を落とすことがあるため、
@@ -12,43 +21,75 @@ const STYLES = {
   body: `margin:0;padding:24px 12px;background-color:#f3f4f6;-webkit-font-smoothing:antialiased;`,
   wrapper: `width:100%;border-collapse:collapse;`,
   card: `width:${MAIL_WIDTH}px;max-width:100%;border-collapse:collapse;background-color:#ffffff;border:1px solid #e5e7eb;`,
-  cell: `padding:24px;font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1f2937;`,
-  image: `display:block;width:100%;max-width:${MAIL_WIDTH - 48}px;height:auto;border:0;outline:1px solid #e5e7eb;`,
-  text: `margin:0;font-size:15px;line-height:1.8;color:#1f2937;word-break:break-word;`,
-  link: `color:#2563eb;text-decoration:underline;word-break:break-all;`,
+  cell: `padding:${MAIL_PADDING}px;font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,Arial,sans-serif;font-size:15px;line-height:1.8;color:#1f2937;`,
+  stripCell: `padding:0;font-size:0;line-height:0;`,
+  stripImage: `display:block;width:100%;max-width:${MAIL_WIDTH}px;height:auto;border:0;`,
+  largeImage: `display:block;width:100%;max-width:${CONTENT_WIDTH}px;height:auto;border:0;outline:1px solid #e5e7eb;`,
+  buttonTable: `border-collapse:collapse;margin:16px auto 0;`,
   placeholder: `margin:0;font-size:14px;line-height:1.8;color:#9ca3af;text-align:center;`,
 } as const;
 
-/** 画像ブロック。URLが安全でなければ何も描かない */
-function buildImageBlock(imageUrl: string): string {
-  const safeUrl = toSafeHttpUrl(imageUrl);
-  if (!safeUrl) return '';
+/** 安全なURLがあればリンクで包む。無ければ中身をそのまま返す */
+function renderLinked(inner: string, url: string): string {
+  const safeUrl = toSafeHttpUrl(url);
+  if (!safeUrl) return inner;
+
+  return `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;">${inner}</a>`;
+}
+
+/**
+ * 帯バナー。画像が主体なので、画像さえあればURL未入力でも表示する。
+ * 左右の余白を取らず、メール幅いっぱいの帯として置く。
+ */
+function buildStripBannerBlock(banner: StripBanner): string {
+  const safeImageUrl = toSafeHttpUrl(banner.imageUrl);
+  if (!safeImageUrl) return '';
 
   // allow-scripts なしの iframe なので onerror は使えない。
-  // 読み込み失敗時は alt テキストと outline がプレースホルダとして機能する。
-  return `<tr><td style="${STYLES.cell}padding-bottom:0;">
-      <img src="${escapeHtml(safeUrl)}" alt="メルマガ画像（読み込めませんでした）" style="${STYLES.image}" />
-    </td></tr>`;
+  // 読み込み失敗時は alt テキストがプレースホルダとして機能する。
+  const image = `<img src="${escapeHtml(safeImageUrl)}" alt="帯バナー（読み込めませんでした）" style="${STYLES.stripImage}" />`;
+
+  return `<tr><td style="${STYLES.stripCell}">${renderLinked(image, banner.url)}</td></tr>`;
 }
 
-/** テキストブロック。改行のみ反映（Markdown非対応） */
-function buildTextBlock(text: string): string {
-  if (text.trim() === '') return '';
+/**
+ * ボタン。メールクライアント互換のため、背景色は <td> に、
+ * クリック領域は block 表示の <a> に持たせる（bulletproof button）。
+ *
+ * 遷移先は「ボタンURL、無ければバナーURL」。どちらも無ければボタン自体を出さない。
+ */
+function buildButton(banner: LargeBanner): string {
+  const text = banner.buttonText.trim();
+  if (text === '') return '';
 
-  return `<tr><td style="${STYLES.cell}padding-bottom:0;">
-      <p style="${STYLES.text}">${nl2br(escapeHtml(text))}</p>
-    </td></tr>`;
-}
-
-/** リンクブロック。URLが安全でなければ何も描かない */
-function buildLinkBlock(url: string): string {
-  const safeUrl = toSafeHttpUrl(url);
+  const safeUrl = toSafeHttpUrl(banner.buttonUrl) ?? toSafeHttpUrl(banner.url);
   if (!safeUrl) return '';
 
-  const escaped = escapeHtml(safeUrl);
-  return `<tr><td style="${STYLES.cell}padding-bottom:0;">
-      <a href="${escaped}" target="_blank" rel="noopener noreferrer" style="${STYLES.link}">${escaped}</a>
-    </td></tr>`;
+  const bgColor = toSafeHexColor(banner.buttonBgColor, DEFAULT_BUTTON_BG_COLOR);
+  const textColor = toSafeHexColor(banner.buttonTextColor, DEFAULT_BUTTON_TEXT_COLOR);
+
+  return `<table role="presentation" style="${STYLES.buttonTable}">
+        <tr><td style="background-color:${bgColor};">
+          <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;padding:14px 32px;color:${textColor};font-size:15px;line-height:1.4;text-align:center;text-decoration:none;">${escapeHtml(text)}</a>
+        </td></tr>
+      </table>`;
+}
+
+/** 大バナー1件。画像 + ボタンを1カラムで積む */
+function buildLargeBannerBlock(banner: LargeBanner): string {
+  const safeImageUrl = toSafeHttpUrl(banner.imageUrl);
+  const button = buildButton(banner);
+
+  const image = safeImageUrl
+    ? renderLinked(
+        `<img src="${escapeHtml(safeImageUrl)}" alt="バナー画像（読み込めませんでした）" style="${STYLES.largeImage}" />`,
+        banner.url,
+      )
+    : '';
+
+  if (image === '' && button === '') return '';
+
+  return `<tr><td style="${STYLES.cell}padding-bottom:0;">${image}${button}</td></tr>`;
 }
 
 function buildPlaceholderBlock(): string {
@@ -59,14 +100,15 @@ function buildPlaceholderBlock(): string {
 
 /**
  * MailData から HTMLメール1通ぶんの文字列を生成する純関数。
- * React コンポーネントに依存しないので、将来「HTMLをコピー / ダウンロード」を
- * 追加するときはこの関数をそのまま再利用できる。
+ *
+ * 配信日・件名は本文には含めない（プレビュー外のメタ欄に表示する）。
+ * React に依存しないので、将来「HTMLをコピー / ダウンロード」を追加するときは
+ * この関数をそのまま再利用できる。
  */
 export function buildMailHtml(data: MailData): string {
   const blocks = [
-    buildImageBlock(data.imageUrl),
-    buildTextBlock(data.text),
-    buildLinkBlock(data.url),
+    buildStripBannerBlock(data.stripBanner),
+    ...data.largeBanners.map(buildLargeBannerBlock),
   ].filter((block) => block !== '');
 
   const content = blocks.length > 0 ? blocks.join('') : buildPlaceholderBlock();
@@ -84,7 +126,7 @@ export function buildMailHtml(data: MailData): string {
         <td align="center">
           <table role="presentation" style="${STYLES.card}">
             ${content}
-            <tr><td style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+            <tr><td style="height:${MAIL_PADDING}px;line-height:${MAIL_PADDING}px;font-size:0;">&nbsp;</td></tr>
           </table>
         </td>
       </tr>

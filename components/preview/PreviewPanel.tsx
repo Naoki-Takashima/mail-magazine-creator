@@ -1,17 +1,21 @@
 import { MailFrame } from '@/components/preview/MailFrame';
+import { PreviewMeta } from '@/components/preview/PreviewMeta';
 
 type PreviewPanelProps = {
   html: string;
+  /** 'YYYYMMDDhhmm'。メール本文には含めず、メタ欄に表示する */
+  deliveryDate: string;
+  subject: string;
   /** 開閉トグルの aria-controls と対応させる id */
   panelId: string;
 };
 
 /**
- * プレビューの「額縁」。中身の描画は MailFrame に委譲する。
+ * プレビューの「額縁」。メール本文の描画は MailFrame に委譲する。
  * 用紙を沈めた色 + 方眼テクスチャの上に白いメール本体を置き、
  * 校正台にメールを1枚載せたような見え方にしている。
  */
-export function PreviewPanel({ html, panelId }: PreviewPanelProps) {
+export function PreviewPanel({ html, deliveryDate, subject, panelId }: PreviewPanelProps) {
   return (
     <section
       id={panelId}
@@ -32,6 +36,10 @@ export function PreviewPanel({ html, panelId }: PreviewPanelProps) {
           プレビュー
         </h2>
       </header>
+
+      <div className="px-4 pb-5 sm:px-10 lg:pl-14">
+        <PreviewMeta deliveryDate={deliveryDate} subject={subject} />
+      </div>
 
       <div className="flex-1 px-4 pb-8 sm:px-10 lg:pl-14">
         <div className="border-rule h-full overflow-hidden border shadow-[0_18px_40px_-28px_rgba(23,21,15,0.55)]">

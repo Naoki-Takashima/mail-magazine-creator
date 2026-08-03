@@ -1,19 +1,38 @@
-import { ImageInput } from '@/components/editor/ImageInput';
-import { TextInput } from '@/components/editor/TextInput';
-import { UrlInput } from '@/components/editor/UrlInput';
-import type { MailData, MailField, ValidationErrors } from '@/types/mail';
+import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
+import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
+import { StripBannerSection } from '@/components/editor/StripBannerSection';
+import { SubjectSection } from '@/components/editor/SubjectSection';
+import type {
+  EditableLargeBannerField,
+  MailData,
+  SimpleMailField,
+  StripBanner,
+  ValidationErrors,
+} from '@/types/mail';
 
 type EditorPanelProps = {
   data: MailData;
   errors: ValidationErrors;
-  onFieldChange: (field: MailField, value: string) => void;
+  onFieldChange: (field: SimpleMailField, value: string) => void;
+  onStripBannerChange: (field: keyof StripBanner, value: string) => void;
+  onAddLargeBanner: () => void;
+  onRemoveLargeBanner: (id: string) => void;
+  onLargeBannerChange: (id: string, field: EditableLargeBannerField, value: string) => void;
 };
 
 /**
- * 入力欄をまとめるだけの presentational コンポーネント。
+ * 4ブロックを並べるだけの presentational コンポーネント。
  * 状態は持たず、値と更新関数を MailEditor から受け取る。
  */
-export function EditorPanel({ data, errors, onFieldChange }: EditorPanelProps) {
+export function EditorPanel({
+  data,
+  errors,
+  onFieldChange,
+  onStripBannerChange,
+  onAddLargeBanner,
+  onRemoveLargeBanner,
+  onLargeBannerChange,
+}: EditorPanelProps) {
   return (
     // プレビューを閉じて全幅になったときに行長が伸びすぎないよう、内側で幅を抑える
     <section
@@ -27,24 +46,38 @@ export function EditorPanel({ data, errors, onFieldChange }: EditorPanelProps) {
         </h2>
       </header>
 
-      <div className="animate-rise" style={{ animationDelay: '80ms' }}>
-        <UrlInput
-          value={data.url}
-          error={errors.url}
-          onChange={(value) => onFieldChange('url', value)}
+      <div className="animate-rise" style={{ animationDelay: '60ms' }}>
+        <DeliveryDateSection
+          value={data.deliveryDate}
+          error={errors.deliveryDate}
+          onChange={(value) => onFieldChange('deliveryDate', value)}
         />
       </div>
 
-      <div className="animate-rise" style={{ animationDelay: '160ms' }}>
-        <ImageInput
-          value={data.imageUrl}
-          error={errors.imageUrl}
-          onChange={(value) => onFieldChange('imageUrl', value)}
+      <div className="animate-rise" style={{ animationDelay: '120ms' }}>
+        <SubjectSection
+          value={data.subject}
+          error={errors.subject}
+          onChange={(value) => onFieldChange('subject', value)}
+        />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '180ms' }}>
+        <StripBannerSection
+          banner={data.stripBanner}
+          errors={errors.stripBanner}
+          onFieldChange={onStripBannerChange}
         />
       </div>
 
       <div className="animate-rise" style={{ animationDelay: '240ms' }}>
-        <TextInput value={data.text} onChange={(value) => onFieldChange('text', value)} />
+        <LargeBannerSection
+          banners={data.largeBanners}
+          errors={errors.largeBanners}
+          onAdd={onAddLargeBanner}
+          onRemove={onRemoveLargeBanner}
+          onFieldChange={onLargeBannerChange}
+        />
       </div>
 
       <p className="border-rule text-ink-faint border-t px-6 py-6 text-[12px] leading-relaxed sm:px-8">

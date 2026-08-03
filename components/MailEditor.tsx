@@ -1,14 +1,20 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useReducer, useState } from 'react';
 
 import { AppHeader } from '@/components/AppHeader';
 import { EditorPanel } from '@/components/editor/EditorPanel';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { buildMailHtml } from '@/lib/buildMailHtml';
+import { mailReducer } from '@/lib/mailReducer';
 import { validateMailData } from '@/lib/validation';
-import { INITIAL_MAIL_DATA, type MailData, type MailField } from '@/types/mail';
+import {
+  INITIAL_MAIL_DATA,
+  type EditableLargeBannerField,
+  type SimpleMailField,
+  type StripBanner,
+} from '@/types/mail';
 
 const PREVIEW_PANEL_ID = 'mail-preview-panel';
 
@@ -18,17 +24,38 @@ const PREVIEW_DEBOUNCE_MS = 200;
 /**
  * このアプリで唯一状態を持つコンポーネント。
  *
- * 状態は入力3値 + プレビュー開閉フラグのみで、受け渡しも
- * MailEditor → EditorPanel → 各Input の2階層で収まるため、
- * Context や状態管理ライブラリは使わない。
+ * 入力がネスト + 可変長配列になったため、更新ロジックは純関数の mailReducer に
+ * 切り出し、ここでは useReducer で束ねるだけにしている。
+ * 値を読むのは EditorPanel と PreviewPanel の2つだけなので、Context や
+ * 状態管理ライブラリは引き続き不要。
  */
 export function MailEditor() {
-  const [mailData, setMailData] = useState<MailData>(INITIAL_MAIL_DATA);
+  const [mailData, dispatch] = useReducer(mailReducer, INITIAL_MAIL_DATA);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
 
-  const updateField = useCallback((field: MailField, value: string) => {
-    setMailData((previous) => ({ ...previous, [field]: value }));
+  const setField = useCallback((field: SimpleMailField, value: string) => {
+    dispatch({ type: 'setField', field, value });
   }, []);
+
+  const setStripBannerField = useCallback((field: keyof StripBanner, value: string) => {
+    dispatch({ type: 'setStripBannerField', field, value });
+  }, []);
+
+  // id の採番は副作用なので、純関数であるリデューサではなくここで行う
+  const addLargeBanner = useCallback(() => {
+    dispatch({ type: 'addLargeBanner', id: crypto.randomUUID() });
+  }, []);
+
+  const removeLargeBanner = useCallback((id: string) => {
+    dispatch({ type: 'removeLargeBanner', id });
+  }, []);
+
+  const setLargeBannerField = useCallback(
+    (id: string, field: EditableLargeBannerField, value: string) => {
+      dispatch({ type: 'setLargeBannerField', id, field, value });
+    },
+    [],
+  );
 
   const togglePreview = useCallback(() => {
     setIsPreviewOpen((previous) => !previous);
@@ -55,8 +82,24 @@ export function MailEditor() {
             : 'lg:grid-cols-[minmax(0,1fr)]'
         }`}
       >
-        <EditorPanel data={mailData} errors={errors} onFieldChange={updateField} />
-        {isPreviewOpen ? <PreviewPanel html={mailHtml} panelId={PREVIEW_PANEL_ID} /> : null}
+        <EditorPanel
+          data={mailData}
+          errors={errors}
+          onFieldChange={setField}
+          onStripBannerChange={setStripBannerField}
+          onAddLargeBanner={addLargeBanner}
+          onRemoveLargeBanner={removeLargeBanner}
+          onLargeBannerChange={setLargeBannerField}
+        />
+        {isPreviewOpen ? (
+          <PreviewPanel
+            html={mailHtml}
+            // メタ欄は iframe の外なので、デバウンスせず即時反映する
+            deliveryDate={mailData.deliveryDate}
+            subject={mailData.subject}
+            panelId={PREVIEW_PANEL_ID}
+          />
+        ) : null}
       </main>
     </>
   );

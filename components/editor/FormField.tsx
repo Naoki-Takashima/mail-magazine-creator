@@ -1,49 +1,48 @@
 import type { ReactNode } from 'react';
 
 type FormFieldProps = {
-  /** 校正刷り風の通し番号（"01" など） */
-  index: string;
   label: string;
-  /** input / textarea の id。label と aria-describedby の結線に使う */
+  /** input の id。label と aria-describedby の結線に使う */
   fieldId: string;
-  description: string;
+  /** 補足文。不要なフィールドでは省略できる */
+  description?: string;
   error?: string;
   children: ReactNode;
 };
 
 /**
  * ラベル・補足・エラーの見た目と a11y 結線を1か所に集約する。
- * 入力欄そのものは children として受け取り、input / textarea の差を吸収しない。
+ * 入力欄そのものは children として受け取り、input の種類の差は吸収しない。
  */
-export function FormField({ index, label, fieldId, description, error, children }: FormFieldProps) {
-  const descriptionId = `${fieldId}-description`;
-  const errorId = `${fieldId}-error`;
-
+export function FormField({ label, fieldId, description, error, children }: FormFieldProps) {
   return (
-    <div className="group border-rule border-t px-6 py-7 sm:px-8">
-      <div className="flex items-baseline gap-3">
-        <span
-          aria-hidden
-          className="text-ink-faint group-focus-within:text-vermilion font-mono text-[11px] tracking-[0.2em] transition-colors"
-        >
-          {index}
-        </span>
-        <label
-          htmlFor={fieldId}
-          className="text-ink font-mono text-[11px] tracking-[0.22em] uppercase"
-        >
-          {label}
-        </label>
-      </div>
+    <div className="group">
+      <label
+        htmlFor={fieldId}
+        className="text-ink font-mono text-[11px] tracking-[0.22em] uppercase"
+      >
+        {label}
+      </label>
 
-      <p id={descriptionId} className="text-ink-soft mt-1.5 mb-3 text-[13px] leading-relaxed">
-        {description}
-      </p>
+      {description ? (
+        <p
+          id={descriptionId(fieldId)}
+          className="text-ink-soft mt-1 mb-2.5 text-[13px] leading-relaxed"
+        >
+          {description}
+        </p>
+      ) : (
+        <div className="h-2.5" />
+      )}
 
       {children}
 
       {error ? (
-        <p id={errorId} role="alert" className="text-vermilion mt-2 text-[13px] leading-relaxed">
+        <p
+          id={errorId(fieldId)}
+          role="alert"
+          className="text-vermilion mt-2 text-[13px] leading-relaxed"
+        >
           {error}
         </p>
       ) : null}
@@ -60,7 +59,26 @@ export const fieldClassName =
   'placeholder:text-ink-faint/70 outline-none transition-colors ' +
   'focus:border-vermilion focus:ring-0';
 
-/** aria-describedby に渡す id 列を組み立てる */
-export function describedBy(fieldId: string, hasError: boolean): string {
-  return hasError ? `${fieldId}-description ${fieldId}-error` : `${fieldId}-description`;
+export function descriptionId(fieldId: string): string {
+  return `${fieldId}-description`;
+}
+
+export function errorId(fieldId: string): string {
+  return `${fieldId}-error`;
+}
+
+/**
+ * aria-describedby に渡す id 列を組み立てる。
+ * 存在しない要素を指さないよう、実際に描画されるものだけを並べる。
+ */
+export function describedBy(
+  fieldId: string,
+  options: { hasDescription: boolean; hasError: boolean },
+): string | undefined {
+  const ids = [
+    options.hasDescription ? descriptionId(fieldId) : null,
+    options.hasError ? errorId(fieldId) : null,
+  ].filter((id): id is string => id !== null);
+
+  return ids.length > 0 ? ids.join(' ') : undefined;
 }
