@@ -38,14 +38,21 @@ export type ColumnItem = {
   textColor: string;
 };
 
-/** カラムセットの末尾に縦積みされるボタン */
-export type ColumnButton = {
-  id: string;
+/**
+ * ボタンの中身。
+ * 複数持つカラムセット（id あり）と、1つだけ持つトピックス（id なし）で共用する。
+ */
+export type ButtonContent = {
   url: string;
   text: string;
+  /** 既定は DEFAULT_BUTTON_TEXT_COLOR */
   textColor: string;
+  /** 既定は DEFAULT_BUTTON_BG_COLOR */
   bgColor: string;
 };
+
+/** カラムセットの末尾に縦積みされるボタン */
+export type ColumnButton = ButtonContent & { id: string };
 
 /** タイトル + カラムアイテム + 末尾ボタン の一式 */
 export type ColumnSet = {
@@ -56,6 +63,40 @@ export type ColumnSet = {
   items: ColumnItem[];
   /** 最大 MAX_COLUMN_BUTTONS 件 */
   buttons: ColumnButton[];
+};
+
+/** 下部大バナー。バナー1件の形は 04 大バナーと同一なので LargeBanner を使い回す */
+export type BottomBannerBlock = {
+  title: string;
+  titleColor: string;
+  /** 最大 MAX_BOTTOM_BANNERS 件 */
+  banners: LargeBanner[];
+};
+
+export type TopicItem = {
+  id: string;
+  url: string;
+  imageUrl: string;
+  boldText: string;
+  normalText: string;
+  /** 太字・ノーマル両方に適用する。既定は DEFAULT_TEXT_COLOR */
+  textColor: string;
+};
+
+export type TopicsBlock = {
+  title: string;
+  titleColor: string;
+  /** 最大 MAX_TOPIC_ITEMS 件 */
+  items: TopicItem[];
+  /** 1件だけなので配列にしない */
+  button: ButtonContent;
+};
+
+/** フッターに並ぶリンク */
+export type InfoLink = {
+  id: string;
+  url: string;
+  text: string;
 };
 
 /**
@@ -75,6 +116,10 @@ export type MailData = {
   threeColumnSets: ColumnSet[];
   /** 最大 MAX_COLUMN_SETS 件 */
   twoColumnSets: ColumnSet[];
+  bottomBannerBlock: BottomBannerBlock;
+  topicsBlock: TopicsBlock;
+  /** 最大 MAX_INFO_LINKS 件 */
+  infoLinks: InfoLink[];
 };
 
 /** MailData のうち ColumnSet[] を持つキー */
@@ -84,12 +129,23 @@ export const MAX_LARGE_BANNERS = 3;
 export const MAX_COLUMN_SETS = 3;
 export const MAX_COLUMN_ITEMS = 18;
 export const MAX_COLUMN_BUTTONS = 3;
+export const MAX_BOTTOM_BANNERS = 5;
+export const MAX_TOPIC_ITEMS = 8;
+export const MAX_INFO_LINKS = 3;
 export const DEFAULT_BUTTON_TEXT_COLOR = '#ffffff';
 export const DEFAULT_BUTTON_BG_COLOR = '#000000';
 export const DEFAULT_TEXT_COLOR = '#000000';
 
 /** メール本文のコンテンツ幅（600px から左右の余白 24px を引いた値） */
 export const MAIL_CONTENT_WIDTH = 552;
+
+/** トピックスの横並びレイアウト（合計 MAIL_CONTENT_WIDTH） */
+export const TOPIC_IMAGE_WIDTH = 160;
+export const TOPIC_GAP_WIDTH = 16;
+export const TOPIC_TEXT_WIDTH = 376;
+
+/** フッターリンクの固定色 */
+export const INFO_LINK_COLOR = '#2563eb';
 
 export type ColumnVariantConfig = {
   stateKey: ColumnSetsKey;
@@ -148,6 +204,15 @@ export type EditableColumnButtonField = Exclude<keyof ColumnButton, 'id'>;
 /** ColumnSet のうちセット単位で編集する項目 */
 export type EditableColumnSetField = 'title' | 'titleColor';
 
+/** タイトルを持つブロックで、タイトル部分として編集する項目 */
+export type EditableBlockTitleField = 'title' | 'titleColor';
+
+/** TopicItem のうちユーザーが編集できる項目（id を除く） */
+export type EditableTopicItemField = Exclude<keyof TopicItem, 'id'>;
+
+/** InfoLink のうちユーザーが編集できる項目（id を除く） */
+export type EditableInfoLinkField = Exclude<keyof InfoLink, 'id'>;
+
 /** バナー1件ぶんの検証エラー。キーが無い = そのフィールドはエラー無し */
 export type BannerErrors = {
   url?: string;
@@ -162,6 +227,15 @@ export type ColumnItemErrors = {
 };
 
 export type ColumnButtonErrors = {
+  url?: string;
+};
+
+export type TopicItemErrors = {
+  url?: string;
+  imageUrl?: string;
+};
+
+export type InfoLinkErrors = {
   url?: string;
 };
 
@@ -182,6 +256,13 @@ export type ValidationErrors = {
   threeColumnSets?: Record<string, ColumnSetErrors>;
   /** セットの id をキーにしたエラー */
   twoColumnSets?: Record<string, ColumnSetErrors>;
+  /** バナーの id をキーにしたエラー */
+  bottomBanners?: Record<string, BannerErrors>;
+  /** トピックの id をキーにしたエラー */
+  topicItems?: Record<string, TopicItemErrors>;
+  topicsButton?: ColumnButtonErrors;
+  /** リンクの id をキーにしたエラー */
+  infoLinks?: Record<string, InfoLinkErrors>;
 };
 
 export const INITIAL_MAIL_DATA: MailData = {
@@ -191,6 +272,19 @@ export const INITIAL_MAIL_DATA: MailData = {
   largeBanners: [],
   threeColumnSets: [],
   twoColumnSets: [],
+  bottomBannerBlock: { title: '', titleColor: DEFAULT_TEXT_COLOR, banners: [] },
+  topicsBlock: {
+    title: '',
+    titleColor: DEFAULT_TEXT_COLOR,
+    items: [],
+    button: {
+      url: '',
+      text: '',
+      textColor: DEFAULT_BUTTON_TEXT_COLOR,
+      bgColor: DEFAULT_BUTTON_BG_COLOR,
+    },
+  },
+  infoLinks: [],
 };
 
 export function createLargeBanner(id: string): LargeBanner {
@@ -235,4 +329,19 @@ export function createColumnButton(id: string): ColumnButton {
     textColor: DEFAULT_BUTTON_TEXT_COLOR,
     bgColor: DEFAULT_BUTTON_BG_COLOR,
   };
+}
+
+export function createTopicItem(id: string): TopicItem {
+  return {
+    id,
+    url: '',
+    imageUrl: '',
+    boldText: '',
+    normalText: '',
+    textColor: DEFAULT_TEXT_COLOR,
+  };
+}
+
+export function createInfoLink(id: string): InfoLink {
+  return { id, url: '', text: '' };
 }

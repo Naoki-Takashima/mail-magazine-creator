@@ -1,10 +1,8 @@
 import { AddItemButton } from '@/components/editor/AddItemButton';
 import { ColumnButtonCard } from '@/components/editor/ColumnButtonCard';
 import { ColumnItemCard } from '@/components/editor/ColumnItemCard';
-import { ColorField } from '@/components/editor/fields/ColorField';
-import { TextField } from '@/components/editor/fields/TextField';
+import { TitleFields } from '@/components/editor/TitleFields';
 import {
-  DEFAULT_TEXT_COLOR,
   MAX_COLUMN_BUTTONS,
   MAX_COLUMN_ITEMS,
   type ColumnSet,
@@ -84,21 +82,12 @@ export function ColumnSetCard({
         </button>
       </div>
 
-      <div className="mt-5 space-y-5">
-        <TextField
-          fieldId={idFor('title')}
-          label="タイトル"
-          description="任意。空のときは見出し行を出しません。"
-          value={set.title}
-          onChange={(value) => onSetFieldChange(set.id, 'title', value)}
-          placeholder="今月のおすすめ"
-        />
-        <ColorField
-          fieldId={idFor('title-color')}
-          label="タイトル文字色"
-          value={set.titleColor}
-          onChange={(value) => onSetFieldChange(set.id, 'titleColor', value)}
-          fallbackColor={DEFAULT_TEXT_COLOR}
+      <div className="mt-5">
+        <TitleFields
+          idPrefix={idPrefix}
+          title={set.title}
+          titleColor={set.titleColor}
+          onChange={(field, value) => onSetFieldChange(set.id, field, value)}
         />
       </div>
 

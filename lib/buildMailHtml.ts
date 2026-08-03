@@ -6,15 +6,23 @@ import {
   DEFAULT_BUTTON_BG_COLOR,
   DEFAULT_BUTTON_TEXT_COLOR,
   DEFAULT_TEXT_COLOR,
+  INFO_LINK_COLOR,
   MAIL_CONTENT_WIDTH,
-  type ColumnButton,
+  TOPIC_GAP_WIDTH,
+  TOPIC_IMAGE_WIDTH,
+  TOPIC_TEXT_WIDTH,
+  type BottomBannerBlock,
+  type ButtonContent,
   type ColumnItem,
   type ColumnSet,
   type ColumnVariant,
   type ColumnVariantConfig,
+  type InfoLink,
   type LargeBanner,
   type MailData,
   type StripBanner,
+  type TopicItem,
+  type TopicsBlock,
 } from '@/types/mail';
 
 const MAIL_WIDTH = 600;
@@ -43,6 +51,14 @@ const STYLES = {
   columnBoldText: `margin:8px 0 0;font-size:14px;font-weight:bold;line-height:1.6;word-break:break-word;`,
   columnNormalText: `margin:4px 0 0;font-size:13px;line-height:1.6;word-break:break-word;`,
   columnButtonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;margin-top:12px;`,
+  topicTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;table-layout:fixed;`,
+  // 2件目以降にだけ付ける区切り罫線
+  topicSeparator: `border-top:1px solid #e5e7eb;margin-top:16px;padding-top:16px;`,
+  topicImage: `display:block;width:100%;max-width:${TOPIC_IMAGE_WIDTH}px;height:auto;border:0;`,
+  topicBoldText: `margin:0;font-size:15px;font-weight:bold;line-height:1.6;word-break:break-word;`,
+  topicNormalText: `margin:6px 0 0;font-size:13px;line-height:1.7;word-break:break-word;`,
+  infoCell: `border-top:1px solid #e5e7eb;text-align:center;`,
+  infoLink: `margin:0 0 8px;font-size:13px;line-height:1.8;text-align:center;`,
 } as const;
 
 /** 安全なURLがあればリンクで包む。無ければ中身をそのまま返す */
@@ -91,8 +107,12 @@ function buildButton(banner: LargeBanner): string {
       </table>`;
 }
 
-/** 大バナー1件。画像 + ボタンを1カラムで積む */
-function buildLargeBannerBlock(banner: LargeBanner): string {
+/**
+ * 大バナー1件ぶんの中身（画像 + ボタン）。
+ * 04 大バナーは1件で1ブロック、07 下部大バナーはタイトルの下に縦積みするため、
+ * 中身の組み立てだけを切り出して両方から使う。
+ */
+function buildLargeBannerContent(banner: LargeBanner): string {
   const safeImageUrl = toSafeHttpUrl(banner.imageUrl);
   const button = buildButton(banner);
 
@@ -105,7 +125,15 @@ function buildLargeBannerBlock(banner: LargeBanner): string {
 
   if (image === '' && button === '') return '';
 
-  return `<tr><td style="${STYLES.cell}padding-bottom:0;">${image}${button}</td></tr>`;
+  return `${image}${button}`;
+}
+
+/** 大バナー1件を1ブロックとして出す */
+function buildLargeBannerBlock(banner: LargeBanner): string {
+  const content = buildLargeBannerContent(banner);
+  if (content === '') return '';
+
+  return `<tr><td style="${STYLES.cell}padding-bottom:0;">${content}</td></tr>`;
 }
 
 /** 配列を size 件ずつの塊に分ける（カラムの行分割用） */
@@ -189,8 +217,22 @@ function buildColumnRows(items: ColumnItem[], config: ColumnVariantConfig): stri
     .join('');
 }
 
-/** セット末尾のボタン。コンテンツ幅いっぱいで縦に積む */
-function buildColumnButton(button: ColumnButton): string {
+/**
+ * ブロック見出し。タイトルが空なら何も出さない。
+ * カラムボックス・下部大バナー・トピックスで共用する。
+ */
+function buildBlockTitle(title: string, titleColor: string): string {
+  if (title.trim() === '') return '';
+
+  const color = toSafeHexColor(titleColor, DEFAULT_TEXT_COLOR);
+  return `<p style="${STYLES.columnTitle}color:${color};">${escapeHtml(title)}</p>`;
+}
+
+/**
+ * コンテンツ幅いっぱいのブロックボタン。
+ * テキストと遷移先が揃ったときだけ出力する。
+ */
+function buildBlockButton(button: ButtonContent): string {
   const text = button.text.trim();
   const safeUrl = toSafeHttpUrl(button.url);
   if (text === '' || !safeUrl) return '';
@@ -212,17 +254,106 @@ function buildColumnButton(button: ColumnButton): string {
 function buildColumnSetBlock(set: ColumnSet, variant: ColumnVariant): string {
   const config = COLUMN_VARIANT_CONFIG[variant];
 
-  const title =
-    set.title.trim() === ''
-      ? ''
-      : `<p style="${STYLES.columnTitle}color:${toSafeHexColor(set.titleColor, DEFAULT_TEXT_COLOR)};">${escapeHtml(set.title)}</p>`;
-
+  const title = buildBlockTitle(set.title, set.titleColor);
   const rows = buildColumnRows(set.items, config);
-  const buttons = set.buttons.map(buildColumnButton).join('');
+  const buttons = set.buttons.map(buildBlockButton).join('');
 
   if (title === '' && rows === '' && buttons === '') return '';
 
   return `<tr><td style="${STYLES.cell}padding-bottom:0;">${title}${rows}${buttons}</td></tr>`;
+}
+
+/**
+ * 下部大バナー。バナー1件の中身は 04 大バナーと同じなので同じ組み立てを使う。
+ * タイトル行を先頭に置き、その下にバナーを縦積みする。
+ */
+function buildBottomBannerBlock(block: BottomBannerBlock): string {
+  const title = buildBlockTitle(block.title, block.titleColor);
+
+  const banners = block.banners
+    .map(buildLargeBannerContent)
+    .filter((content) => content !== '')
+    .map(
+      (content, index) =>
+        `<div style="margin-top:${index === 0 ? 0 : 20}px;font-size:0;line-height:0;">${content}</div>`,
+    )
+    .join('');
+
+  if (title === '' && banners === '') return '';
+
+  return `<tr><td style="${STYLES.cell}padding-bottom:0;">${title}${banners}</td></tr>`;
+}
+
+/**
+ * トピックス1件のセル中身。画像とテキストを横並びにする。
+ * 中身が何も無ければ '' を返し、行そのものを出さない。
+ */
+function buildTopicItemCells(item: TopicItem): string {
+  const textColor = toSafeHexColor(item.textColor, DEFAULT_TEXT_COLOR);
+  const safeImageUrl = toSafeHttpUrl(item.imageUrl);
+
+  const image = safeImageUrl
+    ? renderLinked(
+        `<img src="${escapeHtml(safeImageUrl)}" alt="トピックス画像（読み込めませんでした）" style="${STYLES.topicImage}" />`,
+        item.url,
+      )
+    : '';
+
+  const boldText =
+    item.boldText.trim() === ''
+      ? ''
+      : `<p style="${STYLES.topicBoldText}color:${textColor};">${escapeHtml(item.boldText)}</p>`;
+
+  const normalText =
+    item.normalText.trim() === ''
+      ? ''
+      : `<p style="${STYLES.topicNormalText}color:${textColor};">${escapeHtml(item.normalText)}</p>`;
+
+  const text = `${boldText}${normalText}`;
+  // 画像が無くてもテキストだけで出す（バナーと同じ考え方）
+  if (image === '' && text === '') return '';
+
+  return `<td width="${TOPIC_IMAGE_WIDTH}" valign="top" style="width:${TOPIC_IMAGE_WIDTH}px;padding:0;font-size:0;line-height:0;">${image}</td>
+          <td style="width:${TOPIC_GAP_WIDTH}px;font-size:0;">&nbsp;</td>
+          <td width="${TOPIC_TEXT_WIDTH}" valign="top" align="left" style="width:${TOPIC_TEXT_WIDTH}px;padding:0;">${text}</td>`;
+}
+
+function buildTopicsBlock(block: TopicsBlock): string {
+  const title = buildBlockTitle(block.title, block.titleColor);
+
+  // 空のアイテムを先に除いてから採番する（区切り罫線が先頭行に付かないようにするため）
+  const itemsHtml = block.items
+    .map(buildTopicItemCells)
+    .filter((cells) => cells !== '')
+    .map(
+      (cells, index) =>
+        `<table role="presentation" style="${STYLES.topicTable}${index === 0 ? '' : STYLES.topicSeparator}"><tr>${cells}</tr></table>`,
+    )
+    .join('');
+
+  const button = buildBlockButton(block.button);
+
+  if (title === '' && itemsHtml === '' && button === '') return '';
+
+  return `<tr><td style="${STYLES.cell}padding-bottom:0;">${title}${itemsHtml}${button}</td></tr>`;
+}
+
+/** インフォメーション（フッター）。URLとテキストが揃った行だけを中央寄せで縦に並べる */
+function buildInfoLinksBlock(links: InfoLink[]): string {
+  const rows = links
+    .map((link) => {
+      const text = link.text.trim();
+      const safeUrl = toSafeHttpUrl(link.url);
+      if (text === '' || !safeUrl) return '';
+
+      return `<p style="${STYLES.infoLink}"><a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="color:${INFO_LINK_COLOR};text-decoration:underline;">${escapeHtml(text)}</a></p>`;
+    })
+    .filter((row) => row !== '')
+    .join('');
+
+  if (rows === '') return '';
+
+  return `<tr><td style="${STYLES.cell}${STYLES.infoCell}">${rows}</td></tr>`;
 }
 
 function buildPlaceholderBlock(): string {
@@ -244,6 +375,9 @@ export function buildMailHtml(data: MailData): string {
     ...data.largeBanners.map(buildLargeBannerBlock),
     ...data.threeColumnSets.map((set) => buildColumnSetBlock(set, 'three')),
     ...data.twoColumnSets.map((set) => buildColumnSetBlock(set, 'two')),
+    buildBottomBannerBlock(data.bottomBannerBlock),
+    buildTopicsBlock(data.topicsBlock),
+    buildInfoLinksBlock(data.infoLinks),
   ].filter((block) => block !== '');
 
   const content = blocks.length > 0 ? blocks.join('') : buildPlaceholderBlock();

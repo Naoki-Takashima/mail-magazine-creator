@@ -1,13 +1,17 @@
 import { isValidCompactDateTime } from '@/lib/deliveryDate';
 import type {
   BannerErrors,
+  ButtonContent,
   ColumnButtonErrors,
   ColumnItemErrors,
   ColumnSet,
   ColumnSetErrors,
+  InfoLinkErrors,
   LargeBanner,
   MailData,
   StripBanner,
+  TopicItem,
+  TopicItemErrors,
   ValidationErrors,
 } from '@/types/mail';
 
@@ -128,6 +132,36 @@ function validateColumnSets(sets: ColumnSet[]): Record<string, ColumnSetErrors> 
   });
 }
 
+function validateTopicItem(item: TopicItem): TopicItemErrors | undefined {
+  const errors: TopicItemErrors = {};
+
+  const urlError = urlErrorOf(item.url);
+  if (urlError) errors.url = urlError;
+
+  const imageUrlError = urlErrorOf(item.imageUrl);
+  if (imageUrlError) errors.imageUrl = imageUrlError;
+
+  return omitIfEmpty(errors);
+}
+
+function validateButtonContent(button: ButtonContent): ColumnButtonErrors | undefined {
+  const errors: ColumnButtonErrors = {};
+
+  const urlError = urlErrorOf(button.url);
+  if (urlError) errors.url = urlError;
+
+  return omitIfEmpty(errors);
+}
+
+function validateInfoLink(link: { url: string }): InfoLinkErrors | undefined {
+  const errors: InfoLinkErrors = {};
+
+  const urlError = urlErrorOf(link.url);
+  if (urlError) errors.url = urlError;
+
+  return omitIfEmpty(errors);
+}
+
 /**
  * 必須項目（配信日・件名）は未入力自体をエラーにする。
  * バナー系は任意入力なので「入力されているが不正」のときだけエラーを返す。
@@ -163,6 +197,26 @@ export function validateMailData(data: MailData): ValidationErrors {
   const twoColumnErrors = validateColumnSets(data.twoColumnSets);
   if (twoColumnErrors) {
     errors.twoColumnSets = twoColumnErrors;
+  }
+
+  const bottomBannerErrors = collectById(data.bottomBannerBlock.banners, validateLargeBanner);
+  if (bottomBannerErrors) {
+    errors.bottomBanners = bottomBannerErrors;
+  }
+
+  const topicItemErrors = collectById(data.topicsBlock.items, validateTopicItem);
+  if (topicItemErrors) {
+    errors.topicItems = topicItemErrors;
+  }
+
+  const topicsButtonErrors = validateButtonContent(data.topicsBlock.button);
+  if (topicsButtonErrors) {
+    errors.topicsButton = topicsButtonErrors;
+  }
+
+  const infoLinkErrors = collectById(data.infoLinks, validateInfoLink);
+  if (infoLinkErrors) {
+    errors.infoLinks = infoLinkErrors;
   }
 
   return errors;

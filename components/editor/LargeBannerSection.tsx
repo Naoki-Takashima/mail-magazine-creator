@@ -42,6 +42,7 @@ export function LargeBannerSection({
             <LargeBannerCard
               key={banner.id}
               banner={banner}
+              idPrefix={`large-banner-${position}`}
               position={position}
               errors={errors?.[banner.id]}
               onFieldChange={onFieldChange}

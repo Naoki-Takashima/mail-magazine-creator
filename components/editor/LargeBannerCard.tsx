@@ -11,6 +11,8 @@ import {
 
 type LargeBannerCardProps = {
   banner: LargeBanner;
+  /** 入力欄の id を一意にするための接頭辞。04 と 07 の両方で使うため外から渡す */
+  idPrefix: string;
   /** 表示用の連番（0始まり） */
   position: number;
   errors?: BannerErrors;
@@ -21,16 +23,18 @@ type LargeBannerCardProps = {
 /**
  * 大バナー1件ぶんの入力カード。
  * バナー本体（画像・URL）とボタン設定を罫線で分け、どこまでが1枚かを分かりやすくする。
+ * 04 大バナーと 07 下部大バナーは入力構成が同じなので、このカードを共用する。
  */
 export function LargeBannerCard({
   banner,
+  idPrefix,
   position,
   errors,
   onFieldChange,
   onRemove,
 }: LargeBannerCardProps) {
   const label = String(position + 1).padStart(2, '0');
-  const idFor = (suffix: string) => `large-banner-${position}-${suffix}`;
+  const idFor = (suffix: string) => `${idPrefix}-${suffix}`;
   const change = (field: EditableLargeBannerField) => (value: string) =>
     onFieldChange(banner.id, field, value);
 

@@ -3,7 +3,10 @@
 import { useCallback, useMemo, useReducer, useState } from 'react';
 
 import { AppHeader } from '@/components/AppHeader';
+import type { BottomBannerHandlers } from '@/components/editor/BottomBannerSection';
 import { EditorPanel, type ColumnSectionHandlers } from '@/components/editor/EditorPanel';
+import type { InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
+import type { TopicsHandlers } from '@/components/editor/TopicsSection';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { buildMailHtml } from '@/lib/buildMailHtml';
@@ -50,6 +53,36 @@ function createColumnHandlers(
   };
 }
 
+function createBottomBannerHandlers(dispatch: React.Dispatch<MailAction>): BottomBannerHandlers {
+  return {
+    onBlockFieldChange: (field, value) =>
+      dispatch({ type: 'setBottomBannerBlockField', field, value }),
+    onAdd: () => dispatch({ type: 'addBottomBanner', id: crypto.randomUUID() }),
+    onRemove: (id) => dispatch({ type: 'removeBottomBanner', id }),
+    onFieldChange: (id, field, value) =>
+      dispatch({ type: 'setBottomBannerField', id, field, value }),
+  };
+}
+
+function createTopicsHandlers(dispatch: React.Dispatch<MailAction>): TopicsHandlers {
+  return {
+    onBlockFieldChange: (field, value) => dispatch({ type: 'setTopicsBlockField', field, value }),
+    onAddItem: () => dispatch({ type: 'addTopicItem', id: crypto.randomUUID() }),
+    onRemoveItem: (itemId) => dispatch({ type: 'removeTopicItem', id: itemId }),
+    onItemFieldChange: (itemId, field, value) =>
+      dispatch({ type: 'setTopicItemField', id: itemId, field, value }),
+    onButtonFieldChange: (field, value) => dispatch({ type: 'setTopicsButtonField', field, value }),
+  };
+}
+
+function createInfoLinksHandlers(dispatch: React.Dispatch<MailAction>): InfoLinksHandlers {
+  return {
+    onAdd: () => dispatch({ type: 'addInfoLink', id: crypto.randomUUID() }),
+    onRemove: (id) => dispatch({ type: 'removeInfoLink', id }),
+    onFieldChange: (id, field, value) => dispatch({ type: 'setInfoLinkField', id, field, value }),
+  };
+}
+
 /**
  * このアプリで唯一状態を持つコンポーネント。
  *
@@ -89,6 +122,9 @@ export function MailEditor() {
   // dispatch は再生成されないので、ハンドラ一式も一度作れば使い回せる
   const threeColumnHandlers = useMemo(() => createColumnHandlers(dispatch, 'three'), []);
   const twoColumnHandlers = useMemo(() => createColumnHandlers(dispatch, 'two'), []);
+  const bottomBannerHandlers = useMemo(() => createBottomBannerHandlers(dispatch), []);
+  const topicsHandlers = useMemo(() => createTopicsHandlers(dispatch), []);
+  const infoLinksHandlers = useMemo(() => createInfoLinksHandlers(dispatch), []);
 
   const togglePreview = useCallback(() => {
     setIsPreviewOpen((previous) => !previous);
@@ -125,6 +161,9 @@ export function MailEditor() {
           onLargeBannerChange={setLargeBannerField}
           threeColumnHandlers={threeColumnHandlers}
           twoColumnHandlers={twoColumnHandlers}
+          bottomBannerHandlers={bottomBannerHandlers}
+          topicsHandlers={topicsHandlers}
+          infoLinksHandlers={infoLinksHandlers}
         />
         {isPreviewOpen ? (
           <PreviewPanel

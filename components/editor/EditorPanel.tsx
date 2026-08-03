@@ -1,9 +1,15 @@
+import {
+  BottomBannerSection,
+  type BottomBannerHandlers,
+} from '@/components/editor/BottomBannerSection';
 import type { ColumnSetHandlers } from '@/components/editor/ColumnSetCard';
 import { ColumnSetSection } from '@/components/editor/ColumnSetSection';
 import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
+import { InfoLinksSection, type InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
 import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
 import { StripBannerSection } from '@/components/editor/StripBannerSection';
 import { SubjectSection } from '@/components/editor/SubjectSection';
+import { TopicsSection, type TopicsHandlers } from '@/components/editor/TopicsSection';
 import type {
   EditableLargeBannerField,
   MailData,
@@ -25,6 +31,9 @@ type EditorPanelProps = {
   onLargeBannerChange: (id: string, field: EditableLargeBannerField, value: string) => void;
   threeColumnHandlers: ColumnSectionHandlers;
   twoColumnHandlers: ColumnSectionHandlers;
+  bottomBannerHandlers: BottomBannerHandlers;
+  topicsHandlers: TopicsHandlers;
+  infoLinksHandlers: InfoLinksHandlers;
 };
 
 /**
@@ -41,6 +50,9 @@ export function EditorPanel({
   onLargeBannerChange,
   threeColumnHandlers,
   twoColumnHandlers,
+  bottomBannerHandlers,
+  topicsHandlers,
+  infoLinksHandlers,
 }: EditorPanelProps) {
   return (
     // プレビューを閉じて全幅になったときに行長が伸びすぎないよう、内側で幅を抑える
@@ -105,6 +117,27 @@ export function EditorPanel({
           errors={errors.twoColumnSets}
           {...twoColumnHandlers}
         />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '420ms' }}>
+        <BottomBannerSection
+          block={data.bottomBannerBlock}
+          errors={errors.bottomBanners}
+          {...bottomBannerHandlers}
+        />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '480ms' }}>
+        <TopicsSection
+          block={data.topicsBlock}
+          itemErrors={errors.topicItems}
+          buttonErrors={errors.topicsButton}
+          {...topicsHandlers}
+        />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '540ms' }}>
+        <InfoLinksSection links={data.infoLinks} errors={errors.infoLinks} {...infoLinksHandlers} />
       </div>
 
       <p className="border-rule text-ink-faint border-t px-6 py-6 text-[12px] leading-relaxed sm:px-8">
