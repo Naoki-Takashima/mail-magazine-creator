@@ -1,3 +1,5 @@
+import type { ColumnSetHandlers } from '@/components/editor/ColumnSetCard';
+import { ColumnSetSection } from '@/components/editor/ColumnSetSection';
 import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
 import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
 import { StripBannerSection } from '@/components/editor/StripBannerSection';
@@ -10,6 +12,9 @@ import type {
   ValidationErrors,
 } from '@/types/mail';
 
+/** カラムボックス1ブロックぶんの操作一式 */
+export type ColumnSectionHandlers = ColumnSetHandlers & { onAddSet: () => void };
+
 type EditorPanelProps = {
   data: MailData;
   errors: ValidationErrors;
@@ -18,10 +23,12 @@ type EditorPanelProps = {
   onAddLargeBanner: () => void;
   onRemoveLargeBanner: (id: string) => void;
   onLargeBannerChange: (id: string, field: EditableLargeBannerField, value: string) => void;
+  threeColumnHandlers: ColumnSectionHandlers;
+  twoColumnHandlers: ColumnSectionHandlers;
 };
 
 /**
- * 4ブロックを並べるだけの presentational コンポーネント。
+ * 入力ブロックを並べるだけの presentational コンポーネント。
  * 状態は持たず、値と更新関数を MailEditor から受け取る。
  */
 export function EditorPanel({
@@ -32,6 +39,8 @@ export function EditorPanel({
   onAddLargeBanner,
   onRemoveLargeBanner,
   onLargeBannerChange,
+  threeColumnHandlers,
+  twoColumnHandlers,
 }: EditorPanelProps) {
   return (
     // プレビューを閉じて全幅になったときに行長が伸びすぎないよう、内側で幅を抑える
@@ -77,6 +86,24 @@ export function EditorPanel({
           onAdd={onAddLargeBanner}
           onRemove={onRemoveLargeBanner}
           onFieldChange={onLargeBannerChange}
+        />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '300ms' }}>
+        <ColumnSetSection
+          variant="three"
+          sets={data.threeColumnSets}
+          errors={errors.threeColumnSets}
+          {...threeColumnHandlers}
+        />
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '360ms' }}>
+        <ColumnSetSection
+          variant="two"
+          sets={data.twoColumnSets}
+          errors={errors.twoColumnSets}
+          {...twoColumnHandlers}
         />
       </div>
 

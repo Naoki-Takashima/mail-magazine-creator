@@ -1,3 +1,4 @@
+import { AddItemButton } from '@/components/editor/AddItemButton';
 import { EditorSection } from '@/components/editor/EditorSection';
 import { LargeBannerCard } from '@/components/editor/LargeBannerCard';
 import {
@@ -54,14 +55,12 @@ export function LargeBannerSection({
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={onAdd}
+      <AddItemButton
+        label="+ 大バナーを追加"
+        fullLabel={`上限 ${MAX_LARGE_BANNERS} 件`}
         disabled={isFull}
-        className="border-rule text-ink hover:border-vermilion hover:text-vermilion focus-visible:outline-vermilion disabled:hover:border-rule disabled:hover:text-ink w-full border border-dashed py-3 font-mono text-[11px] tracking-[0.18em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {isFull ? `上限 ${MAX_LARGE_BANNERS} 件` : '+ 大バナーを追加'}
-      </button>
+        onClick={onAdd}
+      />
     </EditorSection>
   );
 }

@@ -1,6 +1,10 @@
 import { isValidCompactDateTime } from '@/lib/deliveryDate';
 import type {
   BannerErrors,
+  ColumnButtonErrors,
+  ColumnItemErrors,
+  ColumnSet,
+  ColumnSetErrors,
   LargeBanner,
   MailData,
   StripBanner,
@@ -40,8 +44,23 @@ function urlErrorOf(value: string): string | undefined {
 }
 
 /** エラーが1つも無ければ undefined を返す（呼び出し側でキーごと省くため） */
-function toBannerErrors(errors: BannerErrors): BannerErrors | undefined {
+function omitIfEmpty<T extends object>(errors: T): T | undefined {
   return Object.keys(errors).length > 0 ? errors : undefined;
+}
+
+/** id をキーにしたエラーの辞書を組み立てる。1件もなければ undefined */
+function collectById<T extends { id: string }, E extends object>(
+  items: T[],
+  validate: (item: T) => E | undefined,
+): Record<string, E> | undefined {
+  const result: Record<string, E> = {};
+
+  for (const item of items) {
+    const errors = validate(item);
+    if (errors) result[item.id] = errors;
+  }
+
+  return omitIfEmpty(result);
 }
 
 function validateStripBanner(banner: StripBanner): BannerErrors | undefined {
@@ -53,7 +72,7 @@ function validateStripBanner(banner: StripBanner): BannerErrors | undefined {
   const imageUrlError = urlErrorOf(banner.imageUrl);
   if (imageUrlError) errors.imageUrl = imageUrlError;
 
-  return toBannerErrors(errors);
+  return omitIfEmpty(errors);
 }
 
 function validateLargeBanner(banner: LargeBanner): BannerErrors | undefined {
@@ -68,7 +87,45 @@ function validateLargeBanner(banner: LargeBanner): BannerErrors | undefined {
   const buttonUrlError = urlErrorOf(banner.buttonUrl);
   if (buttonUrlError) errors.buttonUrl = buttonUrlError;
 
-  return toBannerErrors(errors);
+  return omitIfEmpty(errors);
+}
+
+/**
+ * カラムセット群の検証。3カラム / 2カラムで構造が同じなので共用する。
+ * 文字数はフォーム側の maxLength でハード制限しているため、ここでは見ない。
+ */
+function validateColumnSets(sets: ColumnSet[]): Record<string, ColumnSetErrors> | undefined {
+  return collectById(sets, (set) => {
+    const setErrors: ColumnSetErrors = {};
+
+    const itemErrors = collectById(set.items, (item) => {
+      const errors: ColumnItemErrors = {};
+
+      const urlError = urlErrorOf(item.url);
+      if (urlError) errors.url = urlError;
+
+      const imageUrlError = urlErrorOf(item.imageUrl);
+      if (imageUrlError) errors.imageUrl = imageUrlError;
+
+      const logoUrlError = urlErrorOf(item.logoUrl);
+      if (logoUrlError) errors.logoUrl = logoUrlError;
+
+      return omitIfEmpty(errors);
+    });
+    if (itemErrors) setErrors.items = itemErrors;
+
+    const buttonErrors = collectById(set.buttons, (button) => {
+      const errors: ColumnButtonErrors = {};
+
+      const urlError = urlErrorOf(button.url);
+      if (urlError) errors.url = urlError;
+
+      return omitIfEmpty(errors);
+    });
+    if (buttonErrors) setErrors.buttons = buttonErrors;
+
+    return omitIfEmpty(setErrors);
+  });
 }
 
 /**
@@ -93,15 +150,19 @@ export function validateMailData(data: MailData): ValidationErrors {
     errors.stripBanner = stripBannerErrors;
   }
 
-  const largeBannerErrors: Record<string, BannerErrors> = {};
-  for (const banner of data.largeBanners) {
-    const bannerErrors = validateLargeBanner(banner);
-    if (bannerErrors) {
-      largeBannerErrors[banner.id] = bannerErrors;
-    }
-  }
-  if (Object.keys(largeBannerErrors).length > 0) {
+  const largeBannerErrors = collectById(data.largeBanners, validateLargeBanner);
+  if (largeBannerErrors) {
     errors.largeBanners = largeBannerErrors;
+  }
+
+  const threeColumnErrors = validateColumnSets(data.threeColumnSets);
+  if (threeColumnErrors) {
+    errors.threeColumnSets = threeColumnErrors;
+  }
+
+  const twoColumnErrors = validateColumnSets(data.twoColumnSets);
+  if (twoColumnErrors) {
+    errors.twoColumnSets = twoColumnErrors;
   }
 
   return errors;

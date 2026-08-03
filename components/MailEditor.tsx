@@ -3,14 +3,15 @@
 import { useCallback, useMemo, useReducer, useState } from 'react';
 
 import { AppHeader } from '@/components/AppHeader';
-import { EditorPanel } from '@/components/editor/EditorPanel';
+import { EditorPanel, type ColumnSectionHandlers } from '@/components/editor/EditorPanel';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { buildMailHtml } from '@/lib/buildMailHtml';
-import { mailReducer } from '@/lib/mailReducer';
+import { mailReducer, type MailAction } from '@/lib/mailReducer';
 import { validateMailData } from '@/lib/validation';
 import {
   INITIAL_MAIL_DATA,
+  type ColumnVariant,
   type EditableLargeBannerField,
   type SimpleMailField,
   type StripBanner,
@@ -20,6 +21,34 @@ const PREVIEW_PANEL_ID = 'mail-preview-panel';
 
 /** iframe の srcDoc 差し替えは再読み込みを伴うため、プレビュー側だけ遅らせる */
 const PREVIEW_DEBOUNCE_MS = 200;
+
+/**
+ * カラムボックス1ブロックぶんの操作をまとめる。
+ * 3カラム / 2カラムでアクションは共通なので、variant を束ねるだけで両方に対応できる。
+ * id の採番は副作用なので、純関数であるリデューサではなくここで行う。
+ */
+function createColumnHandlers(
+  dispatch: React.Dispatch<MailAction>,
+  variant: ColumnVariant,
+): ColumnSectionHandlers {
+  return {
+    onAddSet: () => dispatch({ type: 'addColumnSet', variant, id: crypto.randomUUID() }),
+    onRemoveSet: (setId) => dispatch({ type: 'removeColumnSet', variant, setId }),
+    onSetFieldChange: (setId, field, value) =>
+      dispatch({ type: 'setColumnSetField', variant, setId, field, value }),
+    onAddItem: (setId) =>
+      dispatch({ type: 'addColumnItem', variant, setId, id: crypto.randomUUID() }),
+    onRemoveItem: (setId, itemId) => dispatch({ type: 'removeColumnItem', variant, setId, itemId }),
+    onItemFieldChange: (setId, itemId, field, value) =>
+      dispatch({ type: 'setColumnItemField', variant, setId, itemId, field, value }),
+    onAddButton: (setId) =>
+      dispatch({ type: 'addColumnButton', variant, setId, id: crypto.randomUUID() }),
+    onRemoveButton: (setId, buttonId) =>
+      dispatch({ type: 'removeColumnButton', variant, setId, buttonId }),
+    onButtonFieldChange: (setId, buttonId, field, value) =>
+      dispatch({ type: 'setColumnButtonField', variant, setId, buttonId, field, value }),
+  };
+}
 
 /**
  * このアプリで唯一状態を持つコンポーネント。
@@ -57,6 +86,10 @@ export function MailEditor() {
     [],
   );
 
+  // dispatch は再生成されないので、ハンドラ一式も一度作れば使い回せる
+  const threeColumnHandlers = useMemo(() => createColumnHandlers(dispatch, 'three'), []);
+  const twoColumnHandlers = useMemo(() => createColumnHandlers(dispatch, 'two'), []);
+
   const togglePreview = useCallback(() => {
     setIsPreviewOpen((previous) => !previous);
   }, []);
@@ -90,6 +123,8 @@ export function MailEditor() {
           onAddLargeBanner={addLargeBanner}
           onRemoveLargeBanner={removeLargeBanner}
           onLargeBannerChange={setLargeBannerField}
+          threeColumnHandlers={threeColumnHandlers}
+          twoColumnHandlers={twoColumnHandlers}
         />
         {isPreviewOpen ? (
           <PreviewPanel

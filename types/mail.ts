@@ -20,6 +20,45 @@ export type LargeBanner = BannerLink & {
 };
 
 /**
+ * 3カラム / 2カラムの区別。
+ * 構造は同じで、列数・文字数上限・ノーマルテキストの有無だけが違う。
+ */
+export type ColumnVariant = 'three' | 'two';
+
+export type ColumnItem = {
+  id: string;
+  url: string;
+  imageUrl: string;
+  /** 任意。メイン画像の直下に隙間なく繋げる */
+  logoUrl: string;
+  boldText: string;
+  /** 2カラムのみ使用（3カラムでは入力欄も出さず、HTMLにも出さない） */
+  normalText: string;
+  /** 太字・ノーマル両方に適用する。既定は DEFAULT_TEXT_COLOR */
+  textColor: string;
+};
+
+/** カラムセットの末尾に縦積みされるボタン */
+export type ColumnButton = {
+  id: string;
+  url: string;
+  text: string;
+  textColor: string;
+  bgColor: string;
+};
+
+/** タイトル + カラムアイテム + 末尾ボタン の一式 */
+export type ColumnSet = {
+  id: string;
+  title: string;
+  titleColor: string;
+  /** 最大 MAX_COLUMN_ITEMS 件 */
+  items: ColumnItem[];
+  /** 最大 MAX_COLUMN_BUTTONS 件 */
+  buttons: ColumnButton[];
+};
+
+/**
  * メルマガ1通ぶんのコンテンツ。
  * 入力途中の不正値もそのまま保持するため、値はすべて string で持つ。
  * （検証は lib/validation.ts、表示可否の判断は lib/buildMailHtml.ts で行う）
@@ -32,17 +71,82 @@ export type MailData = {
   stripBanner: StripBanner;
   /** 最大 MAX_LARGE_BANNERS 件 */
   largeBanners: LargeBanner[];
+  /** 最大 MAX_COLUMN_SETS 件 */
+  threeColumnSets: ColumnSet[];
+  /** 最大 MAX_COLUMN_SETS 件 */
+  twoColumnSets: ColumnSet[];
 };
 
+/** MailData のうち ColumnSet[] を持つキー */
+export type ColumnSetsKey = 'threeColumnSets' | 'twoColumnSets';
+
 export const MAX_LARGE_BANNERS = 3;
+export const MAX_COLUMN_SETS = 3;
+export const MAX_COLUMN_ITEMS = 18;
+export const MAX_COLUMN_BUTTONS = 3;
 export const DEFAULT_BUTTON_TEXT_COLOR = '#ffffff';
 export const DEFAULT_BUTTON_BG_COLOR = '#000000';
+export const DEFAULT_TEXT_COLOR = '#000000';
+
+/** メール本文のコンテンツ幅（600px から左右の余白 24px を引いた値） */
+export const MAIL_CONTENT_WIDTH = 552;
+
+export type ColumnVariantConfig = {
+  stateKey: ColumnSetsKey;
+  /** 入力エリアでのブロック番号 */
+  sectionIndex: string;
+  title: string;
+  columns: number;
+  boldMaxLength: number;
+  /** null ならノーマルテキストを持たない */
+  normalMaxLength: number | null;
+  /** カラム1つぶんの幅(px)。columns * cellWidth + (columns - 1) * gapWidth = MAIL_CONTENT_WIDTH */
+  cellWidth: number;
+  gapWidth: number;
+};
+
+/**
+ * バリアントごとの差分を1か所に集約する。
+ * UI・バリデーション・HTML生成のすべてがここを参照するため、
+ * 列数や文字数上限を変えるときに触る場所が1か所で済む。
+ */
+export const COLUMN_VARIANT_CONFIG = {
+  three: {
+    stateKey: 'threeColumnSets',
+    sectionIndex: '05',
+    title: '3カラムボックス',
+    columns: 3,
+    boldMaxLength: 10,
+    normalMaxLength: null,
+    cellWidth: 176,
+    gapWidth: 12,
+  },
+  two: {
+    stateKey: 'twoColumnSets',
+    sectionIndex: '06',
+    title: '2カラムボックス',
+    columns: 2,
+    boldMaxLength: 15,
+    normalMaxLength: 26,
+    cellWidth: 268,
+    gapWidth: 16,
+  },
+} as const satisfies Record<ColumnVariant, ColumnVariantConfig>;
 
 /** 単独で更新できる MailData のトップレベル項目 */
 export type SimpleMailField = 'deliveryDate' | 'subject';
 
 /** LargeBanner のうちユーザーが編集できる項目（id を除く） */
 export type EditableLargeBannerField = Exclude<keyof LargeBanner, 'id'>;
+
+/** ColumnItem のうちユーザーが編集できる項目（id を除く） */
+export type EditableColumnItemField = Exclude<keyof ColumnItem, 'id'>;
+
+/** ColumnButton のうちユーザーが編集できる項目（id を除く） */
+export type EditableColumnButtonField = Exclude<keyof ColumnButton, 'id'>;
+
+/** ColumnSet のうちセット単位で編集する項目 */
+export type EditableColumnSetField = 'title' | 'titleColor';
 
 /** バナー1件ぶんの検証エラー。キーが無い = そのフィールドはエラー無し */
 export type BannerErrors = {
@@ -51,12 +155,33 @@ export type BannerErrors = {
   buttonUrl?: string;
 };
 
+export type ColumnItemErrors = {
+  url?: string;
+  imageUrl?: string;
+  logoUrl?: string;
+};
+
+export type ColumnButtonErrors = {
+  url?: string;
+};
+
+export type ColumnSetErrors = {
+  /** アイテムの id をキーにしたエラー */
+  items?: Record<string, ColumnItemErrors>;
+  /** ボタンの id をキーにしたエラー */
+  buttons?: Record<string, ColumnButtonErrors>;
+};
+
 export type ValidationErrors = {
   deliveryDate?: string;
   subject?: string;
   stripBanner?: BannerErrors;
   /** バナーの id をキーにしたエラー */
   largeBanners?: Record<string, BannerErrors>;
+  /** セットの id をキーにしたエラー */
+  threeColumnSets?: Record<string, ColumnSetErrors>;
+  /** セットの id をキーにしたエラー */
+  twoColumnSets?: Record<string, ColumnSetErrors>;
 };
 
 export const INITIAL_MAIL_DATA: MailData = {
@@ -64,6 +189,8 @@ export const INITIAL_MAIL_DATA: MailData = {
   subject: '',
   stripBanner: { url: '', imageUrl: '' },
   largeBanners: [],
+  threeColumnSets: [],
+  twoColumnSets: [],
 };
 
 export function createLargeBanner(id: string): LargeBanner {
@@ -75,5 +202,37 @@ export function createLargeBanner(id: string): LargeBanner {
     buttonText: '',
     buttonTextColor: DEFAULT_BUTTON_TEXT_COLOR,
     buttonBgColor: DEFAULT_BUTTON_BG_COLOR,
+  };
+}
+
+export function createColumnSet(id: string): ColumnSet {
+  return {
+    id,
+    title: '',
+    titleColor: DEFAULT_TEXT_COLOR,
+    items: [],
+    buttons: [],
+  };
+}
+
+export function createColumnItem(id: string): ColumnItem {
+  return {
+    id,
+    url: '',
+    imageUrl: '',
+    logoUrl: '',
+    boldText: '',
+    normalText: '',
+    textColor: DEFAULT_TEXT_COLOR,
+  };
+}
+
+export function createColumnButton(id: string): ColumnButton {
+  return {
+    id,
+    url: '',
+    text: '',
+    textColor: DEFAULT_BUTTON_TEXT_COLOR,
+    bgColor: DEFAULT_BUTTON_BG_COLOR,
   };
 }
