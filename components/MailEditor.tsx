@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/AppHeader';
 import type { BottomBannerHandlers } from '@/components/editor/BottomBannerSection';
 import { EditorPanel, type ColumnSectionHandlers } from '@/components/editor/EditorPanel';
 import type { InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
+import type { StripBannerHandlers } from '@/components/editor/StripBannerSection';
 import type { TopicsHandlers } from '@/components/editor/TopicsSection';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -13,13 +14,12 @@ import { buildMailHtml } from '@/lib/buildMailHtml';
 import { toFileNameDateTime } from '@/lib/deliveryDate';
 import { downloadHtml } from '@/lib/downloadHtml';
 import { mailReducer, type MailAction } from '@/lib/mailReducer';
-import { hasValidationErrors, validateMailData } from '@/lib/validation';
+import { hasValidationErrors, omitRequiredErrors, validateMailData } from '@/lib/validation';
 import {
   INITIAL_MAIL_DATA,
   type ColumnVariant,
   type EditableLargeBannerField,
   type SimpleMailField,
-  type StripBanner,
 } from '@/types/mail';
 
 const PREVIEW_PANEL_ID = 'mail-preview-panel';
@@ -97,13 +97,21 @@ export function MailEditor() {
   const [mailData, dispatch] = useReducer(mailReducer, INITIAL_MAIL_DATA);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
 
+  // 必須の未入力エラーを出してよいかの目印。出力を試みた時点で立てる
+  const [hasTriedExport, setHasTriedExport] = useState(false);
+
   const setField = useCallback((field: SimpleMailField, value: string) => {
     dispatch({ type: 'setField', field, value });
   }, []);
 
-  const setStripBannerField = useCallback((field: keyof StripBanner, value: string) => {
-    dispatch({ type: 'setStripBannerField', field, value });
-  }, []);
+  const stripBannerHandlers = useMemo<StripBannerHandlers>(
+    () => ({
+      onAdd: () => dispatch({ type: 'addStripBanner' }),
+      onRemove: () => dispatch({ type: 'removeStripBanner' }),
+      onFieldChange: (field, value) => dispatch({ type: 'setStripBannerField', field, value }),
+    }),
+    [],
+  );
 
   // id の採番は副作用なので、純関数であるリデューサではなくここで行う
   const addLargeBanner = useCallback(() => {
@@ -135,29 +143,40 @@ export function MailEditor() {
   // エラー表示は入力に即追従させる（デバウンスしない）
   const errors = useMemo(() => validateMailData(mailData), [mailData]);
 
+  // 初期表示で「まだ何も入力していないのに赤字」になるのを避け、
+  // 必須の未入力だけは出力を試みるまで伏せる。URLエラーは入力の結果なので常に出す
+  const visibleErrors = useMemo(
+    () => (hasTriedExport ? errors : omitRequiredErrors(errors)),
+    [errors, hasTriedExport],
+  );
+
   const debouncedMailData = useDebouncedValue(mailData, PREVIEW_DEBOUNCE_MS);
   const mailHtml = useMemo(
     () => buildMailHtml(debouncedMailData, { forPreview: true }),
     [debouncedMailData],
   );
 
-  // 出力できない理由。必須の欠けを先に出し、それが埋まったらURLのエラーを出す
+  // 出力できない理由。必須の欠けを先に出し、それが埋まったらURLのエラーを出す。
+  // 押す前から出すと初期表示の警告になるので、試したあとだけ見せる
   const exportBlockedReason = useMemo(() => {
+    if (!hasTriedExport) return null;
     if (errors.deliveryDate || errors.subject) return '配信日と件名を入力してください';
     if (hasValidationErrors(errors)) return 'URLのエラーを直してください';
     return null;
-  }, [errors]);
+  }, [errors, hasTriedExport]);
 
   const exportFileName = useMemo(() => {
     const stamp = toFileNameDateTime(mailData.deliveryDate);
     return stamp === null ? null : `${stamp}.html`;
   }, [mailData.deliveryDate]);
 
-  // プレビューは200ms遅れるが、出力は押した瞬間の内容にしたいのでデバウンス前を使う
+  // プレビューは200ms遅れるが、出力は押した瞬間の内容にしたいのでデバウンス前を使う。
+  // ボタンは常に押せる状態にしておき、押されて初めてエラーを見せる
   const exportHtml = useCallback(() => {
-    if (exportFileName === null) return;
+    setHasTriedExport(true);
+    if (exportFileName === null || hasValidationErrors(errors)) return;
     downloadHtml(exportFileName, buildMailHtml(mailData));
-  }, [exportFileName, mailData]);
+  }, [errors, exportFileName, mailData]);
 
   return (
     <>
@@ -176,9 +195,9 @@ export function MailEditor() {
       >
         <EditorPanel
           data={mailData}
-          errors={errors}
+          errors={visibleErrors}
           onFieldChange={setField}
-          onStripBannerChange={setStripBannerField}
+          stripBannerHandlers={stripBannerHandlers}
           onAddLargeBanner={addLargeBanner}
           onRemoveLargeBanner={removeLargeBanner}
           onLargeBannerChange={setLargeBannerField}

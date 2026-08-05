@@ -35,13 +35,17 @@ export function BottomBannerSection({
 
   return (
     <EditorSection title="下部大バナー" meta={`${block.banners.length} / ${MAX_BOTTOM_BANNERS}`}>
-      <TitleFields
-        idPrefix="bottom-banner"
-        title={block.title}
-        titleColor={block.titleColor}
-        onChange={onBlockFieldChange}
-        placeholder="あわせてチェック"
-      />
+      {/* 0件のときは追加ボタンだけにする。バナーが無いのにブロックのタイトルだけ
+          入力できても使い道がないため。値は state に残るので、追加し直せば戻る */}
+      {block.banners.length > 0 ? (
+        <TitleFields
+          idPrefix="bottom-banner"
+          title={block.title}
+          titleColor={block.titleColor}
+          onChange={onBlockFieldChange}
+          placeholder="あわせてチェック"
+        />
+      ) : null}
 
       {block.banners.length > 0 ? (
         <div className="space-y-5">
@@ -57,11 +61,7 @@ export function BottomBannerSection({
             />
           ))}
         </div>
-      ) : (
-        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
-          まだバナーはありません
-        </p>
-      )}
+      ) : null}
 
       <AddItemButton
         label="+ 下部大バナーを追加"
