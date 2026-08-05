@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+/*
+ * 白とライトグレーを基調にしたミニマルなテーマ。
+ * 色はアクセント（青）とエラー（赤）の2色だけに絞り、
+ * 面の区別は「白 / 一段沈めたグレー」と 1px の罫線で付ける。
+ *
+ * コンポーネントは生の hex を書かず、必ずこのトークン経由で色を参照する。
+ */
+@theme {
+  /** アプリの地。カード面もここ */
+  --color-canvas: #ffffff;
+  /** 一段沈めた面。プレビューの下地と入れ子カードに使う */
+  --color-canvas-sunk: #f7f7f5;
+
+  --color-fg: #37352f;
+  --color-fg-soft: #6f6e69;
+  --color-fg-faint: #9b9a97;
+  --color-rule: #e9e9e7;
+
+  --color-accent: #2383e2;
+  /** フォーカスリングと hover の淡い面 */
+  --color-accent-soft: #eaf3fc;
+  --color-danger: #e03e3e;
+
+  /*
+   * 本文は日本語主体なので Hiragino に統一する。
+   * 等幅は色コードと出力ファイル名だけに使う（桁が揃うと読みやすい箇所のみ）。
+   */
+  --font-sans: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /*
+   * プレビューの縮小率のフォールバック。
+   * 実際の値は PhoneMock が端末枠に使える実寸から計算してインラインで上書きする
+   * （iPhone 16 の縦横比を保ったまま高さに収めるため、CSS だけでは決められない）。
+   * カード 600px を iPhone 16 の論理幅 393px に収めたときの値。
+   */
+  --phone-scale: 0.655;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+/*
+ * lg 以上ではページ全体ではなくエディタ列がスクロールを担当する。
+ * スクロールバーの出入りで入力欄の幅が揺れないよう、溝を常時確保しておく。
+ */
+.editor-scroll {
+  scrollbar-gutter: stable;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
