@@ -22,7 +22,7 @@ export function EditorSection({ title, required = false, meta, children }: Edito
         <h3 className="text-fg text-[15px] font-semibold">
           {title}
           {required ? (
-            <span aria-label="必須" className="text-accent ml-1 align-super text-[12px]">
+            <span aria-label="必須" className="text-danger ml-1 align-super text-[12px]">
               ※
             </span>
           ) : null}

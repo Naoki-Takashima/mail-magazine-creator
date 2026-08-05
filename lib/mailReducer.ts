@@ -5,6 +5,7 @@ import {
   createColumnSet,
   createInfoLink,
   createLargeBanner,
+  createStripBanner,
   createTopicItem,
   MAX_BOTTOM_BANNERS,
   MAX_COLUMN_BUTTONS,
@@ -30,6 +31,8 @@ import {
 
 export type MailAction =
   | { type: 'setField'; field: SimpleMailField; value: string }
+  | { type: 'addStripBanner' }
+  | { type: 'removeStripBanner' }
   | { type: 'setStripBannerField'; field: keyof StripBanner; value: string }
   | { type: 'addLargeBanner'; id: string }
   | { type: 'removeLargeBanner'; id: string }
@@ -143,7 +146,16 @@ export function mailReducer(state: MailData, action: MailAction): MailData {
     case 'setField':
       return { ...state, [action.field]: action.value };
 
+    // 帯バナーは1件しか持てないので、配列ではなく null / オブジェクトで在り無しを表す
+    case 'addStripBanner':
+      return state.stripBanner === null ? { ...state, stripBanner: createStripBanner() } : state;
+
+    case 'removeStripBanner':
+      return { ...state, stripBanner: null };
+
     case 'setStripBannerField':
+      // 入力欄は追加後しか出ないので、null のときは何もしない
+      if (state.stripBanner === null) return state;
       return {
         ...state,
         stripBanner: { ...state.stripBanner, [action.field]: action.value },

@@ -33,6 +33,7 @@ export function ColumnSetSection({
 
   return (
     <EditorSection title={config.title} meta={`${sets.length} / ${MAX_COLUMN_SETS}`}>
+      {/* 0件のときは何も置かない。追加ボタンだけで用は足りる */}
       {sets.length > 0 ? (
         <div className="space-y-5">
           {sets.map((set, position) => (
@@ -47,11 +48,7 @@ export function ColumnSetSection({
             />
           ))}
         </div>
-      ) : (
-        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
-          まだセットはありません
-        </p>
-      )}
+      ) : null}
 
       <AddItemButton
         label={`+ ${config.title}を追加`}

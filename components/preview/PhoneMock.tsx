@@ -67,7 +67,13 @@ export function PhoneMock({ header, children }: PhoneMockProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center">
+    // 計測が済むまでは見せない。SSR の HTML には「上限いっぱいの端末枠」が入るので、
+    // そのまま出すと JS の読み込みが終わるまで実物より大きい枠が居座ってしまう
+    <div
+      className={`flex h-full min-h-0 flex-col items-center transition-opacity duration-200 ${
+        isMeasured ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       {/* 計測対象は「端末に使える領域」そのもの。キャプションは外に出しておく */}
       <div ref={areaRef} className="flex min-h-0 w-full flex-1 items-center justify-center">
         <div
@@ -84,11 +90,7 @@ export function PhoneMock({ header, children }: PhoneMockProps) {
         </div>
       </div>
 
-      {/* 今どのくらい縮んで見えているかが分かると、確認時に幅を誤解しない。
-          比べる対象は画面幅ではなくカードの見た目の幅 */}
-      <p className="text-fg-faint mt-3 shrink-0 text-[12px] tabular-nums">
-        {MAIL_WIDTH}px → {Math.round(MAIL_WIDTH * scale)}px
-      </p>
+      <p className="text-fg-faint mt-3 shrink-0 text-[12px]">プレビュー</p>
     </div>
   );
 }

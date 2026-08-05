@@ -37,13 +37,15 @@ const CONTENT_WIDTH = MAIL_CONTENT_WIDTH;
  */
 const STYLES = {
   wrapper: `width:100%;border-collapse:collapse;`,
-  card: `width:${MAIL_WIDTH}px;max-width:100%;border-collapse:collapse;background-color:#ffffff;border:1px solid #e5e7eb;`,
+  // 地の色と同じ白なので、外枠は引かない（引くと余白セルだけが箱に見える）
+  card: `width:${MAIL_WIDTH}px;max-width:100%;border-collapse:collapse;background-color:#ffffff;`,
   cell: `padding:${MAIL_PADDING}px;font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;font-size:15px;line-height:1.8;color:#1f2937;`,
   stripCell: `padding:0;font-size:0;line-height:0;`,
   stripImage: `display:block;width:100%;max-width:${MAIL_WIDTH}px;height:auto;border:0;`,
   largeImage: `display:block;width:100%;max-width:${CONTENT_WIDTH}px;height:auto;border:0;outline:1px solid #e5e7eb;`,
-  buttonTable: `border-collapse:collapse;margin:16px auto 0;`,
-  placeholder: `margin:0;font-size:14px;line-height:1.8;color:#9ca3af;text-align:center;`,
+  // カラム / トピックスのボタン（columnButtonTable）と同じく本文幅いっぱいに広げる
+  buttonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;margin:16px auto 0;`,
+  placeholder: `margin:0;font-size:18px;line-height:1.8;color:#9ca3af;text-align:center;`,
   columnTitle: `margin:0 0 16px;font-size:18px;font-weight:bold;line-height:1.5;`,
   columnRowTable: `border-collapse:collapse;table-layout:fixed;`,
   // 画像とロゴを隙間なく縦に繋げるため、行間・文字サイズを潰したセルに入れる
@@ -74,7 +76,9 @@ function renderLinked(inner: string, url: string): string {
  * 帯バナー。画像が主体なので、画像さえあればURL未入力でも表示する。
  * 左右の余白を取らず、メール幅いっぱいの帯として置く。
  */
-function buildStripBannerBlock(banner: StripBanner): string {
+function buildStripBannerBlock(banner: StripBanner | null): string {
+  if (banner === null) return '';
+
   const safeImageUrl = toSafeHttpUrl(banner.imageUrl);
   if (!safeImageUrl) return '';
 
@@ -280,7 +284,9 @@ function buildBottomBannerBlock(block: BottomBannerBlock): string {
     )
     .join('');
 
-  if (title === '' && banners === '') return '';
+  // バナーが1件も無ければタイトルごと出さない。
+  // 入力側も0件のときはタイトル欄を隠すので、画面に出ていない値が配信物に混ざるのを防ぐ
+  if (banners === '') return '';
 
   return `<tr><td style="${STYLES.cell}padding-bottom:0;">${title}${banners}</td></tr>`;
 }
@@ -334,7 +340,8 @@ function buildTopicsBlock(block: TopicsBlock): string {
 
   const button = buildBlockButton(block.button);
 
-  if (title === '' && itemsHtml === '' && button === '') return '';
+  // トピックが1件も無ければタイトル・ボタンごと出さない（下部大バナーと同じ理由）
+  if (itemsHtml === '') return '';
 
   return `<tr><td style="${STYLES.cell}padding-bottom:0;">${title}${itemsHtml}${button}</td></tr>`;
 }
@@ -357,8 +364,20 @@ function buildInfoLinksBlock(links: InfoLink[]): string {
   return `<tr><td style="${STYLES.cell}${STYLES.infoCell}">${rows}</td></tr>`;
 }
 
-function buildPlaceholderBlock(): string {
-  return `<tr><td style="${STYLES.cell}">
+/**
+ * 入力がまだ何も無いときの案内。
+ *
+ * プレビューでは端末画面の上下中央に置きたいので、画面の高さいっぱいのセルにして
+ * vertical-align で中央に寄せる。iframe の高さは端末画面ちょうどなので、
+ * ここでの 100vh が「実機の画面いっぱい」にあたる（末尾の余白セルぶんだけ差し引く）。
+ * 配信用HTMLで同じことをすると body の余白ぶん縦スクロールが出るため、素の高さのまま出す。
+ */
+function buildPlaceholderBlock(forPreview: boolean): string {
+  const cellStyle = forPreview
+    ? `${STYLES.cell}height:calc(100vh - ${MAIL_PADDING}px);vertical-align:middle;`
+    : STYLES.cell;
+
+  return `<tr><td style="${cellStyle}">
       <p style="${STYLES.placeholder}">左のフォームに入力すると、ここにプレビューが表示されます。</p>
     </td></tr>`;
 }
@@ -396,7 +415,8 @@ function buildBodyStyle(forPreview: boolean): string {
   // 端末画面ではカードを端まで広げたいので、プレビューでは body の余白を持たせない
   const padding = forPreview ? '' : `padding:${MAIL_BODY_PADDING_Y}px ${MAIL_BODY_PADDING_X}px;`;
 
-  return `margin:0;${padding}background-color:#f3f4f6;-webkit-font-smoothing:antialiased;`;
+  // カードと同じ白。地の色を変えるとカードの縁が線として見えてしまう
+  return `margin:0;${padding}background-color:#ffffff;-webkit-font-smoothing:antialiased;`;
 }
 
 export function buildMailHtml(data: MailData, options: BuildMailHtmlOptions = {}): string {
@@ -411,7 +431,7 @@ export function buildMailHtml(data: MailData, options: BuildMailHtmlOptions = {}
     buildInfoLinksBlock(data.infoLinks),
   ].filter((block) => block !== '');
 
-  const content = blocks.length > 0 ? blocks.join('') : buildPlaceholderBlock();
+  const content = blocks.length > 0 ? blocks.join('') : buildPlaceholderBlock(forPreview);
 
   return `<!doctype html>
 <html lang="ja">

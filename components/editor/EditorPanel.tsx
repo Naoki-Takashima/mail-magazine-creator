@@ -8,14 +8,16 @@ import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
 import { ExportSection } from '@/components/editor/ExportSection';
 import { InfoLinksSection, type InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
 import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
-import { StripBannerSection } from '@/components/editor/StripBannerSection';
+import {
+  StripBannerSection,
+  type StripBannerHandlers,
+} from '@/components/editor/StripBannerSection';
 import { SubjectSection } from '@/components/editor/SubjectSection';
 import { TopicsSection, type TopicsHandlers } from '@/components/editor/TopicsSection';
 import type {
   EditableLargeBannerField,
   MailData,
   SimpleMailField,
-  StripBanner,
   ValidationErrors,
 } from '@/types/mail';
 
@@ -26,7 +28,7 @@ type EditorPanelProps = {
   data: MailData;
   errors: ValidationErrors;
   onFieldChange: (field: SimpleMailField, value: string) => void;
-  onStripBannerChange: (field: keyof StripBanner, value: string) => void;
+  stripBannerHandlers: StripBannerHandlers;
   onAddLargeBanner: () => void;
   onRemoveLargeBanner: (id: string) => void;
   onLargeBannerChange: (id: string, field: EditableLargeBannerField, value: string) => void;
@@ -50,7 +52,7 @@ export function EditorPanel({
   data,
   errors,
   onFieldChange,
-  onStripBannerChange,
+  stripBannerHandlers,
   onAddLargeBanner,
   onRemoveLargeBanner,
   onLargeBannerChange,
@@ -99,7 +101,7 @@ export function EditorPanel({
           <StripBannerSection
             banner={data.stripBanner}
             errors={errors.stripBanner}
-            onFieldChange={onStripBannerChange}
+            {...stripBannerHandlers}
           />
         </div>
 

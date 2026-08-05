@@ -35,6 +35,7 @@ export function InfoLinksSection({
 
   return (
     <EditorSection title="インフォメーション" meta={`${links.length} / ${MAX_INFO_LINKS}`}>
+      {/* 0件のときは何も置かない。追加ボタンだけで用は足りる */}
       {links.length > 0 ? (
         <div className="space-y-3">
           {links.map((link, position) => (
@@ -70,11 +71,7 @@ export function InfoLinksSection({
             </div>
           ))}
         </div>
-      ) : (
-        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
-          まだリンクはありません
-        </p>
-      )}
+      ) : null}
 
       <AddItemButton
         label="+ リンクを追加"

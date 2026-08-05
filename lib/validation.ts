@@ -67,7 +67,9 @@ function collectById<T extends { id: string }, E extends object>(
   return omitIfEmpty(result);
 }
 
-function validateStripBanner(banner: StripBanner): BannerErrors | undefined {
+function validateStripBanner(banner: StripBanner | null): BannerErrors | undefined {
+  if (banner === null) return undefined;
+
   const errors: BannerErrors = {};
 
   const urlError = urlErrorOf(banner.url);
@@ -163,10 +165,6 @@ function validateInfoLink(link: { url: string }): InfoLinkErrors | undefined {
 }
 
 /**
- * 必須項目（配信日・件名）は未入力自体をエラーにする。
- * バナー系は任意入力なので「入力されているが不正」のときだけエラーを返す。
- */
-/**
  * エラーが1件でもあれば true。
  * validateMailData は中身が空のキーを省いて返すので、トップレベルの鍵の数だけ見れば足りる。
  */
@@ -174,6 +172,23 @@ export function hasValidationErrors(errors: ValidationErrors): boolean {
   return Object.keys(errors).length > 0;
 }
 
+/**
+ * 必須項目（配信日・件名）の未入力エラーだけを伏せた写しを返す。
+ *
+ * 何も入力していない初期表示でいきなり赤字が並ぶのを避けるためのもの。
+ * URLエラーは「入力した結果」なので伏せない。
+ */
+export function omitRequiredErrors(errors: ValidationErrors): ValidationErrors {
+  const visible = { ...errors };
+  delete visible.deliveryDate;
+  delete visible.subject;
+  return visible;
+}
+
+/**
+ * 必須項目（配信日・件名）は未入力自体をエラーにする。
+ * バナー系は任意入力なので「入力されているが不正」のときだけエラーを返す。
+ */
 export function validateMailData(data: MailData): ValidationErrors {
   const errors: ValidationErrors = {};
 

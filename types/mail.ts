@@ -109,7 +109,8 @@ export type MailData = {
   deliveryDate: string;
   /** 必須。メール本文には出さない */
   subject: string;
-  stripBanner: StripBanner;
+  /** 最大1件。未追加は null（他ブロックの「0件の配列」にあたる） */
+  stripBanner: StripBanner | null;
   /** 最大 MAX_LARGE_BANNERS 件 */
   largeBanners: LargeBanner[];
   /** 最大 MAX_COLUMN_SETS 件 */
@@ -126,7 +127,7 @@ export type MailData = {
 export type ColumnSetsKey = 'threeColumnSets' | 'twoColumnSets';
 
 export const MAX_LARGE_BANNERS = 3;
-export const MAX_COLUMN_SETS = 3;
+export const MAX_COLUMN_SETS = 1;
 export const MAX_COLUMN_ITEMS = 18;
 export const MAX_COLUMN_BUTTONS = 3;
 export const MAX_BOTTOM_BANNERS = 5;
@@ -281,7 +282,7 @@ export type ValidationErrors = {
 export const INITIAL_MAIL_DATA: MailData = {
   deliveryDate: '',
   subject: '',
-  stripBanner: { url: '', imageUrl: '' },
+  stripBanner: null,
   largeBanners: [],
   threeColumnSets: [],
   twoColumnSets: [],
@@ -299,6 +300,11 @@ export const INITIAL_MAIL_DATA: MailData = {
   },
   infoLinks: [],
 };
+
+/** 帯バナーは1件しか持てないので、他の create* と違い id を採らない */
+export function createStripBanner(): StripBanner {
+  return { url: '', imageUrl: '' };
+}
 
 export function createLargeBanner(id: string): LargeBanner {
   return {

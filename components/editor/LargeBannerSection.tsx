@@ -27,6 +27,7 @@ export function LargeBannerSection({
 
   return (
     <EditorSection title="大バナー" meta={`${banners.length} / ${MAX_LARGE_BANNERS}`}>
+      {/* 0件のときは何も置かない。追加ボタンだけで用は足りる */}
       {banners.length > 0 ? (
         <div className="space-y-5">
           {banners.map((banner, position) => (
@@ -41,11 +42,7 @@ export function LargeBannerSection({
             />
           ))}
         </div>
-      ) : (
-        <p className="border-rule text-fg-faint rounded-lg border border-dashed px-5 py-6 text-center text-[13px]">
-          まだ大バナーはありません
-        </p>
-      )}
+      ) : null}
 
       <AddItemButton
         label="+ 大バナーを追加"

@@ -23,15 +23,24 @@ export function useElementSize<T extends HTMLElement>() {
     const element = ref.current;
     if (!element) return;
 
-    const observer = new ResizeObserver((entries) => {
-      const rect = entries[0]?.contentRect;
-      if (!rect) return;
-      // 同じ値での再レンダリングを避ける（リサイズ中は毎フレーム発火する）
+    // 同じ値での再レンダリングを避ける（リサイズ中は毎フレーム発火する）
+    const apply = (width: number, height: number) => {
       setSize((previous) =>
-        previous.width === rect.width && previous.height === rect.height
-          ? previous
-          : { width: rect.width, height: rect.height },
+        previous.width === width && previous.height === height ? previous : { width, height },
       );
+    };
+
+    // ResizeObserver の初回コールバックは paint のあとに来るため、
+    // これが無いと hydration 後にもう1フレームだけ未計測の大きさで描かれてしまう。
+    // ここで同期的に測っておけば、最初の paint から正しい寸法になる。
+    // getBoundingClientRect は border-box なので、border / padding を持つ要素には使わないこと
+    const rect = element.getBoundingClientRect();
+    apply(rect.width, rect.height);
+
+    const observer = new ResizeObserver((entries) => {
+      const contentRect = entries[0]?.contentRect;
+      if (!contentRect) return;
+      apply(contentRect.width, contentRect.height);
     });
 
     observer.observe(element);
