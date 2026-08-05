@@ -42,7 +42,7 @@ npm run format   # Prettier で整形
 
 型（`types/mail.ts`）→ 初期値 `INITIAL_MAIL_DATA` と `create*` ファクトリ → action と reducer（`lib/mailReducer.ts`、リスト操作は `addToList` / `removeFromList` / `updateInList` の3ヘルパに集約、上限チェックは `addToList` 内）→ `validateMailData` → `buildMailHtml` → `components/editor/*Section.tsx` を `EditorPanel` に差す → `MailEditor` にハンドラ束を追加、の順に触ることになる。
 
-新しい部品を足す前に既存の共通部品を確認する: `EditorSection` / `FormField` / `AddItemButton` / `TitleFields` / `ButtonFields` / `fields/*`、HTML側は `buildBlockTitle` / `buildBlockButton`、型は `BannerLink` / `LargeBanner` / `ButtonContent`。
+新しい部品を足す前に既存の共通部品を確認する: `EditorSection` / `FormField` / `AddItemButton` / `TitleFields` / `ButtonFields` / `fields/*`、HTML側は `buildBlockTitle` / `buildBlockButton` / `buildButtonRow`（ボタンの見た目は全種ここに集約。3セル構成でテキスト中央 + 右端にくの字矢印）、型は `BannerLink` / `LargeBanner` / `ButtonContent`。
 
 ## 規約
 

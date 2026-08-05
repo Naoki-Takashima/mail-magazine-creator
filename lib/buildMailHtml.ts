@@ -32,6 +32,29 @@ const MAIL_PADDING = 24;
 const CONTENT_WIDTH = MAIL_CONTENT_WIDTH;
 
 /**
+ * ボタン左右のセル幅。左は空のスペーサ、右はくの字矢印が入る。
+ * 同じ幅にしてあるので、真ん中のテキストはボタン全体の中央に来る。
+ */
+const BUTTON_SIDE_WIDTH = 40;
+
+/** 矢印をセルの右端から少し内側に入れる量 */
+const BUTTON_CHEVRON_INSET = 16;
+
+/**
+ * ボタン文字の寸法。行の高さを px で固定しているのは、
+ * 矢印だけ文字を大きくしてもボタンの高さが変わらないようにするため。
+ */
+const BUTTON_FONT_SIZE = 15;
+const BUTTON_LINE_HEIGHT = 21;
+const BUTTON_CHEVRON_SIZE = 22;
+
+/**
+ * くの字矢印（U+203A）。Hiragino / Meiryo / Arial のいずれにも収録されていて
+ * 豆腐にならず、色はボタンの文字色にそのまま追従する。
+ */
+const BUTTON_CHEVRON = '&rsaquo;';
+
+/**
  * メールクライアント（Gmail / Outlook 等）は <head> の CSS を落とすことがあるため、
  * レイアウトは table、装飾はインライン style で組む。
  */
@@ -43,8 +66,11 @@ const STYLES = {
   stripCell: `padding:0;font-size:0;line-height:0;`,
   stripImage: `display:block;width:100%;max-width:${MAIL_WIDTH}px;height:auto;border:0;`,
   largeImage: `display:block;width:100%;max-width:${CONTENT_WIDTH}px;height:auto;border:0;outline:1px solid #e5e7eb;`,
-  // カラム / トピックスのボタン（columnButtonTable）と同じく本文幅いっぱいに広げる
-  buttonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;margin:16px auto 0;`,
+  // カラム / トピックスのボタン（columnButtonTable）と同じく本文幅いっぱいに広げる。
+  // 左右のスペーサ幅を確実に守らせたいので table-layout は fixed
+  buttonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;table-layout:fixed;margin:16px auto 0;`,
+  // font-size は矢印だけ大きくするので、呼び出し側で必ず1回だけ指定する
+  buttonAnchor: `display:block;padding:14px 0;line-height:${BUTTON_LINE_HEIGHT}px;text-decoration:none;`,
   placeholder: `margin:0;font-size:18px;line-height:1.8;color:#9ca3af;text-align:center;`,
   columnTitle: `margin:0 0 16px;font-size:18px;font-weight:bold;line-height:1.5;`,
   columnRowTable: `border-collapse:collapse;table-layout:fixed;`,
@@ -53,7 +79,7 @@ const STYLES = {
   columnMediaImage: `display:block;width:100%;height:auto;border:0;`,
   columnBoldText: `margin:8px 0 0;font-size:14px;font-weight:bold;line-height:1.6;word-break:break-word;`,
   columnNormalText: `margin:4px 0 0;font-size:13px;line-height:1.6;word-break:break-word;`,
-  columnButtonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;margin-top:12px;`,
+  columnButtonTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;table-layout:fixed;margin-top:12px;`,
   topicTable: `width:${CONTENT_WIDTH}px;max-width:100%;border-collapse:collapse;table-layout:fixed;`,
   // 2件目以降にだけ付ける区切り罫線
   topicSeparator: `border-top:1px solid #e5e7eb;margin-top:16px;padding-top:16px;`,
@@ -90,9 +116,36 @@ function buildStripBannerBlock(banner: StripBanner | null): string {
 }
 
 /**
- * ボタン。メールクライアント互換のため、背景色は <td> に、
- * クリック領域は block 表示の <a> に持たせる（bulletproof button）。
+ * ボタンの中身（1行ぶんのセル）。
  *
+ * メールクライアント互換のため、背景色は <td> に、クリック領域は block 表示の <a> に
+ * 持たせる（bulletproof button）。position も float も使えないので、
+ * 「左の余白 / テキスト / くの字矢印」の3セルに割って矢印を右端に寄せる。
+ * 左右を同じ幅にしてあるので、テキストはボタン全体の中央に来る。
+ *
+ * 3セルすべてを <a> で埋めるのは、ボタンのどこを押しても遷移させるため。
+ * 矢印は画像ではなく文字。配信物から参照できる画像の置き場が無いうえ、
+ * data URI の画像は Gmail などがブロックする。
+ *
+ * 背景色は <table> にも敷く。プレビューは transform: scale() で縮小するため、
+ * セルの継ぎ目にサブピクセルの隙間ができ、下地が線になって透ける。
+ */
+function buildButtonRow(safeUrl: string, text: string, textColor: string, bgColor: string): string {
+  const cellStyle = `background-color:${bgColor};border:0;`;
+  const sideCellStyle = `width:${BUTTON_SIDE_WIDTH}px;${cellStyle}`;
+
+  const anchor = (content: string, fontSize: number, extra: string) =>
+    `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="${STYLES.buttonAnchor}color:${textColor};font-size:${fontSize}px;${extra}">${content}</a>`;
+
+  return `<tr>
+          <td width="${BUTTON_SIDE_WIDTH}" style="${sideCellStyle}">${anchor('&nbsp;', BUTTON_FONT_SIZE, '')}</td>
+          <td align="center" style="${cellStyle}">${anchor(escapeHtml(text), BUTTON_FONT_SIZE, 'text-align:center;')}</td>
+          <td width="${BUTTON_SIDE_WIDTH}" align="right" style="${sideCellStyle}">${anchor(BUTTON_CHEVRON, BUTTON_CHEVRON_SIZE, `text-align:right;padding-right:${BUTTON_CHEVRON_INSET}px;`)}</td>
+        </tr>`;
+}
+
+/**
+ * 大バナーのボタン。
  * 遷移先は「ボタンURL、無ければバナーURL」。どちらも無ければボタン自体を出さない。
  */
 function buildButton(banner: LargeBanner): string {
@@ -105,10 +158,8 @@ function buildButton(banner: LargeBanner): string {
   const bgColor = toSafeHexColor(banner.buttonBgColor, DEFAULT_BUTTON_BG_COLOR);
   const textColor = toSafeHexColor(banner.buttonTextColor, DEFAULT_BUTTON_TEXT_COLOR);
 
-  return `<table role="presentation" style="${STYLES.buttonTable}">
-        <tr><td style="background-color:${bgColor};">
-          <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;padding:14px 32px;color:${textColor};font-size:15px;line-height:1.4;text-align:center;text-decoration:none;">${escapeHtml(text)}</a>
-        </td></tr>
+  return `<table role="presentation" style="${STYLES.buttonTable}background-color:${bgColor};">
+        ${buildButtonRow(safeUrl, text, textColor, bgColor)}
       </table>`;
 }
 
@@ -245,10 +296,8 @@ function buildBlockButton(button: ButtonContent): string {
   const bgColor = toSafeHexColor(button.bgColor, DEFAULT_BUTTON_BG_COLOR);
   const textColor = toSafeHexColor(button.textColor, DEFAULT_BUTTON_TEXT_COLOR);
 
-  return `<table role="presentation" style="${STYLES.columnButtonTable}">
-        <tr><td align="center" style="background-color:${bgColor};">
-          <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;padding:14px 16px;color:${textColor};font-size:15px;line-height:1.4;text-align:center;text-decoration:none;">${escapeHtml(text)}</a>
-        </td></tr>
+  return `<table role="presentation" style="${STYLES.columnButtonTable}background-color:${bgColor};">
+        ${buildButtonRow(safeUrl, text, textColor, bgColor)}
       </table>`;
 }
 
