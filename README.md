@@ -76,20 +76,27 @@ npm run dev      # http://localhost:3000
 
 その他のスクリプト:
 
-| コマンド               | 内容               |
-| ---------------------- | ------------------ |
-| `npm run build`        | 本番ビルド         |
-| `npm run lint`         | ESLint             |
-| `npm run format`       | Prettier で整形    |
-| `npm run format:check` | 整形差分のチェック |
+| コマンド                  | 内容                                |
+| ------------------------- | ----------------------------------- |
+| `npm run build`           | 本番ビルド                          |
+| `npm run lint`            | ESLint                              |
+| `npm run typecheck`       | 型チェック（ビルドせずに tsc だけ） |
+| `npm run format`          | Prettier で整形                     |
+| `npm run format:check`    | 整形差分のチェック                  |
+| `npm test`                | Jest（単体・コンポーネント）        |
+| `npm run test:watch`      | Jest を watch で回す                |
+| `npm run test:coverage`   | カバレッジ付きで実行                |
+| `npm run storybook`       | Storybook（http://localhost:6006）  |
+| `npm run build-storybook` | Storybook の静的ビルド              |
 
 ## 技術構成
 
 - Next.js 16 (App Router) / React 19 / TypeScript
 - Tailwind CSS v4
 - ESLint + Prettier（`prettier-plugin-tailwindcss` でクラス順を自動整列）
+- Jest + React Testing Library（テスト） / Storybook（コンポーネントのカタログ・a11y 確認）
 
-**追加ライブラリなし**。UIライブラリ・フォームライブラリ・状態管理ライブラリは、この規模では利点よりコストが上回ると判断して入れていない（検討の詳細は [docs/plan.md](docs/plan.md)）。
+**実行時の追加ライブラリなし**（`dependencies` は next / react / react-dom だけ）。UIライブラリ・フォームライブラリ・状態管理ライブラリは、この規模では利点よりコストが上回ると判断して入れていない（検討の詳細は [docs/plan.md](docs/plan.md)）。テストと Storybook はすべて `devDependencies`。
 
 ## ディレクトリ構成
 
@@ -129,7 +136,12 @@ hooks/
 ├── useDebouncedValue.ts  プレビュー更新の間引き
 └── useElementSize.ts     端末枠に使える領域の実寸を購読
 types/mail.ts
+.storybook/               Storybook の設定（main.ts / preview.ts）
+jest.config.mjs           next/jest ベースの Jest 設定
+jest.setup.ts             jest-dom の読み込みと ResizeObserver のスタブ
 ```
+
+テスト（`*.test.ts` / `*.test.tsx`）とストーリー（`*.stories.tsx`）は対象ファイルの隣に置く。
 
 ## 設計メモ
 
@@ -244,10 +256,31 @@ URLエラーはこの対象外で、常に即時に出す。これは未入力�
 
 デバウンスはプレビューの iframe だけに掛けている（`srcDoc` の差し替えは再読み込みを伴うため）。入力欄・メタ欄・件名バーは controlled のまま即時反映され、打鍵の遅延はない。
 
+### テストは Jest、Storybook はカタログに限定する
+
+ランナーを1つに保つため、Storybook 公式のテスト統合（`addon-vitest`。Vitest 専用）は入れていない。役割は「Jest + RTL = 振る舞いの検証」「Storybook = 見た目のカタログと a11y パネル」で分けている。導入時の判断は [docs/plan-testing.md](docs/plan-testing.md) にある。
+
+`buildMailHtml` はスナップショットを使わず、エスケープ・URL/色のサニタイズ・「中身0件のブロックを出さない」といった仕様を直接アサートする。デザインの微調整でテストが落ちないようにするため。
+
+カラムボックスのテストは `describe.each(['three', 'two'])` で両バリアントを必ず回す。3カラム / 2カラムは同一実装で、片方だけ通るテストには意味がないため。
+
+### CI
+
+`.github/workflows/ci.yml` が main への push とすべてのプルリクエストで
+`lint` → `format:check` → `typecheck` → `test` → `build` → `build-storybook` を順に回す。
+
+Node のバージョンは `.nvmrc` を参照する（ローカルとずれないようにするため）。
+
+`npm run typecheck` は `next typegen && tsc --noEmit`。`next typegen` を前に置いているのは、`next-env.d.ts` と `.next/types` が生成物でリポジトリに入っていないため（これが無いと `@/public/*.png` の import が型エラーになる）。`next build` も型チェックを兼ねるが、ビルドを待たずに型エラーだけ先に出したいので別ステップにしている。
+
+`build-storybook` を回しているのは、ストーリーの破損を自動で見つける唯一の手段だから。
+
 ## 今後の拡張
 
 - HTMLソースのクリップボードコピー
 - 大バナーの並べ替え（`mailReducer` に `moveLargeBanner` を追加）
 - テンプレート切替、localStorage への下書き保存
 - PC / スマホのプレビュー幅切替（`--phone-scale` の差し替えで実現できる）
-- `lib/` 配下の純関数の単体テスト（Vitest）
+- `MailEditor` の統合テスト（入力 → プレビュー反映まで通す）
+- ビジュアルリグレッションテスト
+- カバレッジ閾値の設定（テストが揃ってから）

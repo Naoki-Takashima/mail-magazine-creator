@@ -1,0 +1,57 @@
+name: CI
+
+# main への push と、すべてのプルリクエストで検証する
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 同じブランチに続けて push したときは、古い実行を打ち切る
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint / test / build
+    runs-on: ubuntu-latest
+
+    # CI から外部への送信は要らないので、両方の telemetry を切る
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      STORYBOOK_DISABLE_TELEMETRY: 1
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Node のバージョンは .nvmrc を唯一の出どころにする（ローカルとずれないように）
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: 依存のインストール
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier の整形差分
+        run: npm run format:check
+
+      # ビルドを待たずに型エラーを出すためのステップ。
+      # next-env.d.ts と .next/types は生成物で、リポジトリに入っていない（.gitignore）ため、
+      # tsc の前に next typegen で作り直す必要がある（typecheck スクリプトに含めてある）
+      - name: 型チェック
+        run: npm run typecheck
+
+      - name: Jest
+        run: npm test
+
+      # next build は型チェックも兼ねる（tsconfig の include がテスト・ストーリーまで見る）
+      - name: 本番ビルド
+        run: npm run build
+
+      # ストーリーが壊れていないかを自動で見る唯一の手段
+      - name: Storybook のビルド
+        run: npm run build-storybook

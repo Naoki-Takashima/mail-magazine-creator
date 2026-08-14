@@ -7,15 +7,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## コマンド
 
 ```bash
-nvm use          # Node 22 必須（.nvmrc）。Node 18 では Next.js 16 が起動しない
+nvm use              # Node 22 必須（.nvmrc）。Node 18 では Next.js 16 が起動しない
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # 本番ビルド（型エラーもここで出る）
-npm run lint     # ESLint（flat config、引数なしでリポジトリ全体）
-npm run format   # Prettier で整形
+npm run dev          # http://localhost:3000
+npm run build        # 本番ビルド（型エラーもここで出る）
+npm run lint         # ESLint（flat config、引数なしでリポジトリ全体）
+npm run typecheck    # next typegen && tsc --noEmit（ビルドせずに型だけ見る）
+npm run format       # Prettier で整形
+npm test             # Jest（単体 + React Testing Library）
+npm run storybook    # Storybook（http://localhost:6006）
 ```
 
-**テストフレームワークは未導入**。検証は `npm run build`（型）+ `npm run lint` + ブラウザでの目視。`lib/` の純関数に Vitest を入れるのは README「今後の拡張」に残っている未着手項目。
+検証は `npm test` + `npm run build`（型）+ `npm run lint`。導入時の判断は [docs/plan-testing.md](docs/plan-testing.md)。
+
+**CI（`.github/workflows/ci.yml`）は main への push と全PRで `lint` → `format:check` → `typecheck` → `test` → `build` → `build-storybook` を回す**。ローカルでこの6つが通れば CI も通る。Node は `.nvmrc` 参照なので、バージョンを変えるときは `.nvmrc` だけ触れば足りる。
+
+`typecheck` が `tsc --noEmit` 単体ではなく `next typegen && tsc --noEmit` なのは、`next-env.d.ts` と `.next/types` が生成物で **リポジトリに入っていない**ため。無い状態で tsc を回すと `@/public/mmc_icon.png` の import が `TS2307` になる。
+
+- テスト（`*.test.ts` / `*.test.tsx`）・ストーリー（`*.stories.tsx`）は**対象ファイルの隣に置く**（コロケーション）
+- `tsconfig.json` の `include` が `**/*.ts(x)` なので、**`next build` はテストとストーリーも型チェックする**
+- Storybook のテスト統合（`addon-vitest`）は入れていない。ランナーは Jest 1つに保ち、Storybook はカタログと a11y パネルに限定する
+- `buildMailHtml` のテストにスナップショットは使わない（デザイン調整のたびに `-u` が必要になるため）。仕様を直接アサートする
+- カラム系のテストは `describe.each(['three', 'two'])` で必ず両バリアントを回す
+- jsdom に `ResizeObserver` は無い。`jest.setup.ts` にスタブを置いてある
 
 ## アーキテクチャ
 
@@ -41,6 +55,8 @@ npm run format   # Prettier で整形
 ## 入力ブロックを追加・変更するとき
 
 型（`types/mail.ts`）→ 初期値 `INITIAL_MAIL_DATA` と `create*` ファクトリ → action と reducer（`lib/mailReducer.ts`、リスト操作は `addToList` / `removeFromList` / `updateInList` の3ヘルパに集約、上限チェックは `addToList` 内）→ `validateMailData` → `buildMailHtml` → `components/editor/*Section.tsx` を `EditorPanel` に差す → `MailEditor` にハンドラ束を追加、の順に触ることになる。
+
+最後に `lib/*.test.ts` の該当ファイル（`mailReducer` の上限・不変性、`validateMailData` の入れ子、`buildMailHtml` の「0件なら出さない」）にケースを足す。共通部品を新設したなら `*.test.tsx` と `*.stories.tsx` も対象の隣に置く。
 
 新しい部品を足す前に既存の共通部品を確認する: `EditorSection` / `FormField` / `AddItemButton` / `TitleFields` / `ButtonFields` / `fields/*`、HTML側は `buildBlockTitle` / `buildBlockButton` / `buildButtonRow`（ボタンの見た目は全種ここに集約。3セル構成でテキスト中央 + 右端にくの字矢印）、型は `BannerLink` / `LargeBanner` / `ButtonContent`。
 
