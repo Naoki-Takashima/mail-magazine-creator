@@ -48,6 +48,8 @@ npm run storybook    # Storybook（http://localhost:6006）
 - **端末枠は計測が済むまで `opacity-0`**。SSR HTML には上限値の枠（413 × 892px）が焼き込まれるので、外すとリロードのたびに「大きい枠 → 縮む」が見える。`useElementSize` の `getBoundingClientRect()` による同期初期計測（`ResizeObserver` の初回コールバックは paint 後に来る）とセットで効いている
 - **`min-h-0` の連鎖**（body → main → 各列 → 端末枠）を1か所でも落とすと、`lg` 以上のビューポート固定レイアウトが壊れてプレビューが画面外へ流れる
 - **iframe の `sandbox` から `allow-scripts` は外したまま**にする。入力は `escapeHtml`、URL は `toSafeHttpUrl`（http/https のみ）、色は `toSafeHexColor`（`style` 属性に差し込むためエスケープでは守れない）を必ず経由させる
+- **表示値をローカル state に持つ入力欄は、props の変化に追従させる**。`DateTimeField` だけが `input[type=datetime-local]` 用の生値を自前で持っている（打鍵途中に表示が巻き戻るのを防ぐため）。初期値だけ見る作りにすると、マウント後に走る下書きの復元が反映されない。`value !== syncedValue` のときだけ同期し、打鍵由来の変化は `handleChange` で同期済みとして記録する
+- **`MailData` の形を変えたら `lib/draftStorage.ts` の `DRAFT_VERSION` を上げる**。入力内容は localStorage に自動保存しており、上げ忘れるとキーが欠けた古い下書きがそのまま復元されて画面が壊れる。保存側の effect にある `if (draftToSave === INITIAL_MAIL_DATA) return;` は「復元より先に保存が走って空で上書きする」のを防ぐ要。`clearAll` が `INITIAL_MAIL_DATA` を**そのまま返す**（参照が一致する）ことに依存しているので、両方セットで直す
 - **帯バナー（03）だけは配列ではなく `StripBanner | null`**。1件しか置けないため。`null` = 未追加で、入力欄も出さない。`setStripBannerField` は `null` のとき何もしない（追加前に値が入る経路を塞ぐ）
 - **下部大バナー（07）・トピックス（08）は中身0件ならブロックごと出さない**。入力側はタイトル欄（08 はボタン欄も）を隠し、`buildMailHtml` も `banners === ''` / `itemsHtml === ''` で `''` を返す。片方だけ直すと「画面に無い値が配信物に出る」ずれになる
 - **HTML出力ボタンは disabled にしない**。押せないボタンは理由を返せないため、押した時点でエラーを出して出力だけ止める。理由は「必須の欠け → URLエラー」の順に1つだけ出す

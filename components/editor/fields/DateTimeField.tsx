@@ -15,9 +15,23 @@ import { toCompactDateTime, toDatetimeLocalValue } from '@/lib/deliveryDate';
 export function DateTimeField({ value, onChange, ...fieldProps }: FieldProps) {
   const [rawValue, setRawValue] = useState(() => toDatetimeLocalValue(value));
 
+  /*
+   * 下書きの復元やクリアで value が外から差し替わったときは、表示にも反映する。
+   * 打鍵由来の変化は handleChange 側で同期済みとして記録しておくので、
+   * 入力途中に変換結果が '' になってもここでは触らない（打ち直しにならない）。
+   */
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    setRawValue(toDatetimeLocalValue(value));
+  }
+
   const handleChange = (nextRawValue: string) => {
+    const nextValue = toCompactDateTime(nextRawValue);
+
     setRawValue(nextRawValue);
-    onChange(toCompactDateTime(nextRawValue));
+    setSyncedValue(nextValue);
+    onChange(nextValue);
   };
 
   return (

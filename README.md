@@ -113,6 +113,8 @@ components/
 │   ├── FormField.tsx         ラベル / エラーの a11y 結線 + 入力欄の共通クラス
 │   ├── AddItemButton.tsx     「+ 追加 / 上限N件」の共通ボタン
 │   ├── ExportSection.tsx     HTML出力ボタン（入力の最後）
+│   ├── RestoreNotice.tsx     下書きを復元したことを知らせる帯
+│   ├── ClearDraftButton.tsx  入力を全消し（インライン2段階の確認付き）
 │   ├── TitleFields.tsx       タイトル + タイトル文字色（05〜08 で共用）
 │   ├── ButtonFields.tsx      ボタンの4入力（05 / 06 / 08 で共用）
 │   ├── fields/               入力欄の共通部品（Text / Url / DateTime / Color）
@@ -129,6 +131,7 @@ lib/
 ├── mailReducer.ts        入力状態の更新（純関数）
 ├── deliveryDate.ts       YYYYMMDDhhmm ⇄ datetime-local ⇄ 表示用文字列 / ファイル名
 ├── downloadHtml.ts       文字列を .html としてダウンロード
+├── draftStorage.ts       入力内容の localStorage への保存 / 復元 / 削除
 ├── color.ts              色コードのサニタイズ
 ├── escapeHtml.ts         HTMLエスケープ
 └── validation.ts         必須チェック / URL検証
@@ -197,6 +200,31 @@ flex/grid の子は既定で `min-height:auto`（中身より小さくならな�
 ただし**ボタンは disabled にしない**。押せないボタンは「なぜ押せないのか」を返せないため、押した時点で理由を出して出力だけ止める形にしている。
 
 ダウンロードは Blob と `<a download>` だけ。サーバーには何も送らない。
+
+### 入力は localStorage に自動保存する
+
+1通ぶんの入力量が多く、誤ってリロードしたときの損失が大きいので、`MailData` を localStorage に
+自動保存している（500ms のデバウンス）。起動時は黙って復元し、`RestoreNotice` の帯で復元したことだけ伝える。
+保存するのは `MailData` だけで、`hasTriedExport` やプレビューの開閉といった画面の状態は保存しない。
+
+保存形式は `{ version, data }`。**`MailData` の形を変えたら `lib/draftStorage.ts` の `DRAFT_VERSION` を上げる**。
+上げ忘れると、キーが欠けた古い下書きがそのまま復元されて画面が壊れる。版が違えば読まずに捨て、
+版が同じでもキーが欠けていれば `INITIAL_MAIL_DATA` の上に載せて埋める。
+
+復元はマウント後の `useEffect` で行う。`useReducer` の初期値から読むと、localStorage を持たない SSR と
+描画結果がずれる（hydration 不一致）。逆に保存の側には「まだ一度も編集していないなら書かない」条件が要る。
+
+```ts
+if (draftToSave === INITIAL_MAIL_DATA) return;
+```
+
+これが無いと**復元より先に保存が走り、保存済みの下書きを空で上書きする**。リデューサは必ず新しい
+オブジェクトを返すので、参照が初期値のままなら未編集と判定できる。フラグや ref で effect の実行順を
+制御するより堅い。`clearAll` が `INITIAL_MAIL_DATA` をそのまま返しているのもこの判定に合わせるためで、
+その代わり削除は `clearDraft()` を明示的に呼ぶ。
+
+localStorage への読み書きはすべて `try/catch` で包んである。保存できない環境（容量超過、無効化）でも、
+入力・プレビュー・HTML出力はそのまま動く。
 
 ### 必須エラーは「出力を試みるまで」出さない
 

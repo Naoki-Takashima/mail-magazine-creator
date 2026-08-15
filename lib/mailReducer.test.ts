@@ -24,6 +24,27 @@ function reduceAll(state: MailData, actions: MailAction[]): MailData {
   return actions.reduce(mailReducer, state);
 }
 
+describe('下書きの復元とクリア', () => {
+  it('restoreDraft は渡した内容をそのまま state にする', () => {
+    const draft: MailData = { ...INITIAL_MAIL_DATA, subject: '復元された件名' };
+
+    const state = mailReducer(INITIAL_MAIL_DATA, { type: 'restoreDraft', data: draft });
+
+    expect(state).toBe(draft);
+  });
+
+  it('clearAll は初期値と同じ参照を返す', () => {
+    const edited = mailReducer(INITIAL_MAIL_DATA, {
+      type: 'setField',
+      field: 'subject',
+      value: '8月号',
+    });
+
+    // 参照が一致することに MailEditor の「未編集なら保存しない」判定が依存している
+    expect(mailReducer(edited, { type: 'clearAll' })).toBe(INITIAL_MAIL_DATA);
+  });
+});
+
 describe('setField', () => {
   it('配信日と件名を更新する', () => {
     const state = reduceAll(INITIAL_MAIL_DATA, [

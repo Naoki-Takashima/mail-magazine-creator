@@ -7,6 +7,7 @@ import {
   createLargeBanner,
   createStripBanner,
   createTopicItem,
+  INITIAL_MAIL_DATA,
   MAX_BOTTOM_BANNERS,
   MAX_COLUMN_BUTTONS,
   MAX_COLUMN_ITEMS,
@@ -30,6 +31,9 @@ import {
 } from '@/types/mail';
 
 export type MailAction =
+  // 保存済みの下書きを丸ごと差し替える / 入力を初期状態に戻す
+  | { type: 'restoreDraft'; data: MailData }
+  | { type: 'clearAll' }
   | { type: 'setField'; field: SimpleMailField; value: string }
   | { type: 'addStripBanner' }
   | { type: 'removeStripBanner' }
@@ -143,6 +147,13 @@ function updateSet(
  */
 export function mailReducer(state: MailData, action: MailAction): MailData {
   switch (action.type) {
+    case 'restoreDraft':
+      return action.data;
+
+    // INITIAL_MAIL_DATA をそのまま返す（参照が一致することに MailEditor 側が依存している）
+    case 'clearAll':
+      return INITIAL_MAIL_DATA;
+
     case 'setField':
       return { ...state, [action.field]: action.value };
 

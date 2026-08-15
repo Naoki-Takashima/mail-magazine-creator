@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 
 import { AppHeader } from '@/components/AppHeader';
 import type { BottomBannerHandlers } from '@/components/editor/BottomBannerSection';
@@ -13,6 +13,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { buildMailHtml } from '@/lib/buildMailHtml';
 import { toFileNameDateTime } from '@/lib/deliveryDate';
 import { downloadHtml } from '@/lib/downloadHtml';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStorage';
 import { mailReducer, type MailAction } from '@/lib/mailReducer';
 import { hasValidationErrors, omitRequiredErrors, validateMailData } from '@/lib/validation';
 import {
@@ -26,6 +27,9 @@ const PREVIEW_PANEL_ID = 'mail-preview-panel';
 
 /** iframe の srcDoc 差し替えは再読み込みを伴うため、プレビュー側だけ遅らせる */
 const PREVIEW_DEBOUNCE_MS = 200;
+
+/** localStorage への書き込みは同期処理なので、打鍵ごとには走らせない */
+const DRAFT_DEBOUNCE_MS = 500;
 
 /**
  * カラムボックス1ブロックぶんの操作をまとめる。
@@ -100,6 +104,26 @@ export function MailEditor() {
   // 必須の未入力エラーを出してよいかの目印。出力を試みた時点で立てる
   const [hasTriedExport, setHasTriedExport] = useState(false);
 
+  // 保存済みの下書きを復元した直後だけ帯を出す
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  /*
+   * 復元はマウント後に1回だけ。useReducer の初期値から読むと、
+   * localStorage を持たない SSR と描画結果がずれる（hydration 不一致）。
+   *
+   * set-state-in-effect を外しているのは、これが「外部ストアの中身を初回だけ取り込む」
+   * 処理で、連鎖レンダリングにならないため（下書きがある場合の1回きり）。
+   * ref に逃がすとレンダー中に読むことになり、今度は refs ルールに反する。
+   */
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft === null) return;
+
+    dispatch({ type: 'restoreDraft', data: draft });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasRestoredDraft(true);
+  }, []);
+
   const setField = useCallback((field: SimpleMailField, value: string) => {
     dispatch({ type: 'setField', field, value });
   }, []);
@@ -149,6 +173,26 @@ export function MailEditor() {
     () => (hasTriedExport ? errors : omitRequiredErrors(errors)),
     [errors, hasTriedExport],
   );
+
+  const draftToSave = useDebouncedValue(mailData, DRAFT_DEBOUNCE_MS);
+
+  useEffect(() => {
+    // まだ一度も編集していない状態は保存しない。
+    // これが無いと、復元より先にこの effect が走って保存済みの下書きを空で上書きする。
+    // リデューサは必ず新しいオブジェクトを返すので、参照が初期値のままなら未編集と判定できる
+    if (draftToSave === INITIAL_MAIL_DATA) return;
+
+    saveDraft(draftToSave);
+  }, [draftToSave]);
+
+  // 入力を空に戻す。clearAll は INITIAL_MAIL_DATA を返す = 上の effect が動かないので、
+  // 保存済みの下書きはここで明示的に消す
+  const clearAll = useCallback(() => {
+    dispatch({ type: 'clearAll' });
+    clearDraft();
+    setHasRestoredDraft(false);
+    setHasTriedExport(false);
+  }, []);
 
   const debouncedMailData = useDebouncedValue(mailData, PREVIEW_DEBOUNCE_MS);
   const mailHtml = useMemo(
@@ -209,6 +253,10 @@ export function MailEditor() {
           exportFileName={exportFileName}
           exportBlockedReason={exportBlockedReason}
           onExport={exportHtml}
+          hasRestoredDraft={hasRestoredDraft}
+          // 復元した内容を捨てる操作なので、クリアと同じ処理でよい
+          onDiscardRestored={clearAll}
+          onClearAll={clearAll}
         />
         {isPreviewOpen ? (
           <PreviewPanel
