@@ -2,12 +2,14 @@ import {
   BottomBannerSection,
   type BottomBannerHandlers,
 } from '@/components/editor/BottomBannerSection';
+import { ClearDraftButton } from '@/components/editor/ClearDraftButton';
 import type { ColumnSetHandlers } from '@/components/editor/ColumnSetCard';
 import { ColumnSetSection } from '@/components/editor/ColumnSetSection';
 import { DeliveryDateSection } from '@/components/editor/DeliveryDateSection';
 import { ExportSection } from '@/components/editor/ExportSection';
 import { InfoLinksSection, type InfoLinksHandlers } from '@/components/editor/InfoLinksSection';
 import { LargeBannerSection } from '@/components/editor/LargeBannerSection';
+import { RestoreNotice } from '@/components/editor/RestoreNotice';
 import {
   StripBannerSection,
   type StripBannerHandlers,
@@ -42,6 +44,10 @@ type EditorPanelProps = {
   /** 出力できない理由。null なら出力できる */
   exportBlockedReason: string | null;
   onExport: () => void;
+  /** 保存済みの下書きを復元した直後だけ true。帯を出す */
+  hasRestoredDraft: boolean;
+  onDiscardRestored: () => void;
+  onClearAll: () => void;
 };
 
 /**
@@ -64,6 +70,9 @@ export function EditorPanel({
   exportFileName,
   exportBlockedReason,
   onExport,
+  hasRestoredDraft,
+  onDiscardRestored,
+  onClearAll,
 }: EditorPanelProps) {
   return (
     // lg 以上ではページ全体ではなくこの列がスクロールを担当する
@@ -80,6 +89,8 @@ export function EditorPanel({
             入力
           </h2>
         </header>
+
+        {hasRestoredDraft ? <RestoreNotice onDiscard={onDiscardRestored} /> : null}
 
         <div className="animate-rise" style={{ animationDelay: '60ms' }}>
           <DeliveryDateSection
@@ -166,9 +177,12 @@ export function EditorPanel({
           />
         </div>
 
-        <p className="border-rule text-fg-faint border-t px-6 py-6 text-[12px] leading-relaxed sm:px-8">
-          入力内容はブラウザ上でのみ扱われ、どこにも保存・送信されません。
-        </p>
+        <div className="border-rule flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t px-6 py-6 sm:px-8">
+          <p className="text-fg-faint text-[12px] leading-relaxed">
+            入力内容はこの端末のブラウザに自動保存されます。サーバーには送信されません。
+          </p>
+          <ClearDraftButton onClear={onClearAll} />
+        </div>
       </div>
     </section>
   );
