@@ -2,6 +2,8 @@ import { MailFrame } from '@/components/preview/MailFrame';
 import { PhoneMock } from '@/components/preview/PhoneMock';
 import { PreviewMeta } from '@/components/preview/PreviewMeta';
 import { SubjectBar } from '@/components/preview/SubjectBar';
+import { TestDelivery } from '@/components/preview/TestDelivery';
+import type { TestDeliveryResult } from '@/lib/testDelivery';
 
 type PreviewPanelProps = {
   html: string;
@@ -10,6 +12,7 @@ type PreviewPanelProps = {
   subject: string;
   /** 開閉トグルの aria-controls と対応させる id */
   panelId: string;
+  onSendTestMail: (to: string) => Promise<TestDeliveryResult>;
 };
 
 /**
@@ -20,16 +23,27 @@ type PreviewPanelProps = {
  * メタ欄が shrink-0、端末枠が残り全部（flex-1 + min-h-0）。
  * min-h-0 を落とすと中身の高さが列を押し広げて固定が壊れるので消さないこと。
  */
-export function PreviewPanel({ html, deliveryDate, subject, panelId }: PreviewPanelProps) {
+export function PreviewPanel({
+  html,
+  deliveryDate,
+  subject,
+  panelId,
+  onSendTestMail,
+}: PreviewPanelProps) {
   return (
     <section
       id={panelId}
       aria-label="プレビュー"
       className="bg-canvas-sunk border-rule relative flex min-w-0 flex-col border-t lg:h-full lg:min-h-0 lg:border-t-0 lg:border-l"
     >
-      {/* 見出しは置かない。浮いた高さはそのまま端末枠の高さに回す */}
-      <div className="shrink-0 px-4 pt-6 pb-4 sm:px-10">
-        <PreviewMeta deliveryDate={deliveryDate} />
+      {/* 見出しは置かない。浮いた高さはそのまま端末枠の高さに回す。
+          テスト配信はメタ欄の右に並べる（<dl> の中には入れない）。
+          この行の高さは変えていないので、端末枠の縮小率にも影響しない */}
+      <div className="flex shrink-0 items-stretch gap-3 px-4 pt-6 pb-4 sm:px-10">
+        <div className="min-w-0 grow">
+          <PreviewMeta deliveryDate={deliveryDate} />
+        </div>
+        <TestDelivery subject={subject} onSend={onSendTestMail} />
       </div>
 
       {/*

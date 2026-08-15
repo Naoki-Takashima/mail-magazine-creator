@@ -57,6 +57,8 @@ yarn-error.log*
 
 # env files
 .env*
+# 変数名だけの雛形はリポジトリに入れる（値は書かない）
+!.env.example
 
 # vercel
 .vercel
