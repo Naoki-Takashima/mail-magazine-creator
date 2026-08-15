@@ -66,6 +66,28 @@
 
 `buildMailHtml` 側も同じ条件で揃えてあり、中身が空ならタイトル・ボタンごとブロックを出力しない。入力値そのものは state に残るので、追加し直せば入力内容は元に戻る。**画面に出ていない値が配信物に混ざらない**ことを優先した。
 
+## テスト配信
+
+プレビュー上部、配信日時の右にある「テスト配信」から、**いま作っている内容をそのまま1通だけ送れる**。実際のメールクライアント（Gmail・Outlook）で開いた見た目は、ブラウザで HTML を開いても分からないため。
+
+- 宛先は**1件**。形式のエラーは入力欄から離れた時点と、送信を押した時点で出る
+- 送るのはダウンロードされる HTML と同じ**配信用HTML**で、件名も入力したまま送られる
+- 配信日・件名が未入力、またはURLにエラーがあるときは、HTML出力と同じ理由を出して送信しない
+- 宛先はどこにも保存されない（下書きにも入らない）
+
+送信には [Resend](https://resend.com/) を使う。**環境変数が2つ必要**で、未設定だと「送信の設定が完了していません」が出る。
+
+```bash
+cp .env.example .env.local
+```
+
+| 変数             | 内容                                                                    |
+| ---------------- | ----------------------------------------------------------------------- |
+| `RESEND_API_KEY` | Resend の API キー（https://resend.com/api-keys）                       |
+| `MAIL_FROM`      | 送信元アドレス。**Resend で検証済みのドメイン**でないと送信を拒否される |
+
+ホスティング先（Vercel 等）にも同じ2つを設定する。ここだけがサーバー処理なので、**静的書き出しでは動かない**。
+
 ## 使い方
 
 ```bash
@@ -98,13 +120,16 @@ npm run dev      # http://localhost:3000
 
 **実行時の追加ライブラリなし**（`dependencies` は next / react / react-dom だけ）。UIライブラリ・フォームライブラリ・状態管理ライブラリは、この規模では利点よりコストが上回ると判断して入れていない（検討の詳細は [docs/plan.md](docs/plan.md)）。テストと Storybook はすべて `devDependencies`。
 
+サーバー処理は **`/api/test-delivery` の1本だけ**。テスト配信のAPIキーをブラウザに出さないためにあり、メール送信も SDK ではなく `fetch` で Resend の HTTP API を叩いている（[docs/plan-test-delivery.md](docs/plan-test-delivery.md)）。それ以外はすべてブラウザ内で完結する。
+
 ## ディレクトリ構成
 
 ```
 app/
 ├── layout.tsx            metadata とビューポート固定の body
 ├── page.tsx              Server Component。シェルのみ
-└── globals.css           テーマトークン（色・フォント）
+├── globals.css           テーマトークン（色・フォント）
+└── api/test-delivery/route.ts  テスト配信（唯一のサーバー処理）
 components/
 ├── AppHeader.tsx         ワードマーク + プレビュー開閉トグル
 ├── MailEditor.tsx        'use client'。唯一の状態保持者
@@ -125,7 +150,9 @@ components/
     ├── PreviewMeta.tsx       配信日時（iframe の外）
     ├── SubjectBar.tsx        件名バー（端末画面の上部に固定）
     ├── PhoneMock.tsx         スマホ枠（iPhone 16 の画面比を保って高さに収める）
-    └── MailFrame.tsx         iframe srcDoc レンダラ（600px描画 → scale 縮小）
+    ├── MailFrame.tsx         iframe srcDoc レンダラ（600px描画 → scale 縮小）
+    ├── TestDelivery.tsx      テスト配信の起動ボタン（宛先の値もここが持つ）
+    └── TestDeliveryDialog.tsx  宛先を入力するモーダル（<dialog> + showModal）
 lib/
 ├── buildMailHtml.ts      MailData → HTMLメール文字列（純関数）
 ├── mailReducer.ts        入力状態の更新（純関数）
@@ -134,14 +161,17 @@ lib/
 ├── draftStorage.ts       入力内容の localStorage への保存 / 復元 / 削除
 ├── color.ts              色コードのサニタイズ
 ├── escapeHtml.ts         HTMLエスケープ
-└── validation.ts         必須チェック / URL検証
+├── testDelivery.ts       テスト配信の型・上限・リクエストの検証（純関数）
+├── sendTestMail.ts       /api/test-delivery への POST
+└── validation.ts         必須チェック / URL・メールアドレス検証 / 出力を止める理由
 hooks/
 ├── useDebouncedValue.ts  プレビュー更新の間引き
 └── useElementSize.ts     端末枠に使える領域の実寸を購読
 types/mail.ts
 .storybook/               Storybook の設定（main.ts / preview.ts）
 jest.config.mjs           next/jest ベースの Jest 設定
-jest.setup.ts             jest-dom の読み込みと ResizeObserver のスタブ
+jest.setup.ts             jest-dom の読み込みと jsdom に無いAPI（ResizeObserver / dialog / TextEncoder）のスタブ
+.env.example              テスト配信に必要な環境変数の雛形
 ```
 
 テスト（`*.test.ts` / `*.test.tsx`）とストーリー（`*.stories.tsx`）は対象ファイルの隣に置く。

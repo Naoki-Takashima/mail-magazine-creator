@@ -39,6 +39,19 @@ export function toSafeHttpUrl(value: string): string | null {
   return isSafeHttpUrl(value) ? value.trim() : null;
 }
 
+/**
+ * メールアドレスの形式。RFC 5322 を厳密になぞる正規表現は使わない。
+ * 読めない長さになる割に「送れるアドレスを弾く」事故が増えるだけで、
+ * 最終的な可否は送信先のメールサーバーしか知らないため、
+ * ここでは打ち間違いを拾う程度（空白なし・@ が1つ・ドメインにドット）に留める。
+ */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** メールアドレスの形式として妥当なら true（前後の空白は無視する） */
+export function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
 const URL_ERROR_MESSAGE = 'http:// または https:// で始まるURLを入力してください';
 
 /** 入力があり、かつ不正なURLのときだけメッセージを返す（空欄はエラーにしない） */
@@ -170,6 +183,19 @@ function validateInfoLink(link: { url: string }): InfoLinkErrors | undefined {
  */
 export function hasValidationErrors(errors: ValidationErrors): boolean {
   return Object.keys(errors).length > 0;
+}
+
+/**
+ * 出力・送信を止める理由を1つだけ返す。エラーが無ければ null。
+ *
+ * 理由を並べても直す順番は結局1つずつなので、必須の欠けを先に出し、
+ * それが埋まってからURLのエラーを出す。
+ * HTML出力とテスト配信で文言と優先順を揃えるため、判定はここに集約する。
+ */
+export function describeBlockedReason(errors: ValidationErrors): string | null {
+  if (errors.deliveryDate || errors.subject) return '配信日と件名を入力してください';
+  if (hasValidationErrors(errors)) return 'URLのエラーを直してください';
+  return null;
 }
 
 /**

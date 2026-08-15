@@ -1,6 +1,8 @@
 import {
+  describeBlockedReason,
   hasValidationErrors,
   isSafeHttpUrl,
+  isValidEmail,
   omitRequiredErrors,
   toSafeHttpUrl,
   validateMailData,
@@ -182,5 +184,53 @@ describe('omitRequiredErrors', () => {
     omitRequiredErrors(errors);
 
     expect(errors.deliveryDate).toBe('配信日を入力してください');
+  });
+});
+
+describe('isValidEmail', () => {
+  it.each(['test@example.com', 'user.name+tag@example.co.jp', '  test@example.com  ', 'a@b.c'])(
+    '%s を許可する',
+    (value) => {
+      expect(isValidEmail(value)).toBe(true);
+    },
+  );
+
+  it.each([
+    ['空文字', ''],
+    ['空白のみ', '   '],
+    ['@ が無い', 'test.example.com'],
+    ['@ が2つ', 'test@@example.com'],
+    ['ドメインにドットが無い', 'test@example'],
+    ['ローカル部が無い', '@example.com'],
+    ['途中に空白', 'te st@example.com'],
+  ])('%s は弾く', (_label, value) => {
+    expect(isValidEmail(value)).toBe(false);
+  });
+});
+
+describe('describeBlockedReason', () => {
+  it('エラーが無ければ null', () => {
+    expect(describeBlockedReason({})).toBeNull();
+  });
+
+  it('必須が欠けていればその理由を返す', () => {
+    expect(describeBlockedReason({ subject: '件名を入力してください' })).toBe(
+      '配信日と件名を入力してください',
+    );
+  });
+
+  it('必須の欠けをURLエラーより先に出す', () => {
+    const errors = {
+      deliveryDate: '配信日を入力してください',
+      stripBanner: { url: URL_ERROR },
+    };
+
+    expect(describeBlockedReason(errors)).toBe('配信日と件名を入力してください');
+  });
+
+  it('必須が揃っていればURLのエラーを返す', () => {
+    expect(describeBlockedReason({ stripBanner: { url: URL_ERROR } })).toBe(
+      'URLのエラーを直してください',
+    );
   });
 });

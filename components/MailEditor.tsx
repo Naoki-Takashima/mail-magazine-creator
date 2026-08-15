@@ -15,7 +15,14 @@ import { toFileNameDateTime } from '@/lib/deliveryDate';
 import { downloadHtml } from '@/lib/downloadHtml';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStorage';
 import { mailReducer, type MailAction } from '@/lib/mailReducer';
-import { hasValidationErrors, omitRequiredErrors, validateMailData } from '@/lib/validation';
+import { sendTestMail } from '@/lib/sendTestMail';
+import type { TestDeliveryResult } from '@/lib/testDelivery';
+import {
+  describeBlockedReason,
+  hasValidationErrors,
+  omitRequiredErrors,
+  validateMailData,
+} from '@/lib/validation';
 import {
   INITIAL_MAIL_DATA,
   type ColumnVariant,
@@ -202,12 +209,10 @@ export function MailEditor() {
 
   // 出力できない理由。必須の欠けを先に出し、それが埋まったらURLのエラーを出す。
   // 押す前から出すと初期表示の警告になるので、試したあとだけ見せる
-  const exportBlockedReason = useMemo(() => {
-    if (!hasTriedExport) return null;
-    if (errors.deliveryDate || errors.subject) return '配信日と件名を入力してください';
-    if (hasValidationErrors(errors)) return 'URLのエラーを直してください';
-    return null;
-  }, [errors, hasTriedExport]);
+  const exportBlockedReason = useMemo(
+    () => (hasTriedExport ? describeBlockedReason(errors) : null),
+    [errors, hasTriedExport],
+  );
 
   const exportFileName = useMemo(() => {
     const stamp = toFileNameDateTime(mailData.deliveryDate);
@@ -221,6 +226,21 @@ export function MailEditor() {
     if (exportFileName === null || hasValidationErrors(errors)) return;
     downloadHtml(exportFileName, buildMailHtml(mailData));
   }, [errors, exportFileName, mailData]);
+
+  // テスト配信も「出力」の一種なので、出力と同じ条件・同じ理由で止める。
+  // 送るのはプレビュー用ではなく配信用のHTMLで、200ms遅れる debouncedMailData ではなく
+  // 押した瞬間の mailData から作り直す
+  const sendTestMailFromEditor = useCallback(
+    async (to: string): Promise<TestDeliveryResult> => {
+      setHasTriedExport(true);
+
+      const blockedReason = describeBlockedReason(errors);
+      if (blockedReason !== null) return { ok: false, message: blockedReason };
+
+      return sendTestMail({ to, subject: mailData.subject, html: buildMailHtml(mailData) });
+    },
+    [errors, mailData],
+  );
 
   return (
     <>
@@ -265,6 +285,7 @@ export function MailEditor() {
             deliveryDate={mailData.deliveryDate}
             subject={mailData.subject}
             panelId={PREVIEW_PANEL_ID}
+            onSendTestMail={sendTestMailFromEditor}
           />
         ) : null}
       </main>

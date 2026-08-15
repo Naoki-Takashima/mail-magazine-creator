@@ -52,7 +52,9 @@ npm run storybook    # Storybook（http://localhost:6006）
 - **`MailData` の形を変えたら `lib/draftStorage.ts` の `DRAFT_VERSION` を上げる**。入力内容は localStorage に自動保存しており、上げ忘れるとキーが欠けた古い下書きがそのまま復元されて画面が壊れる。保存側の effect にある `if (draftToSave === INITIAL_MAIL_DATA) return;` は「復元より先に保存が走って空で上書きする」のを防ぐ要。`clearAll` が `INITIAL_MAIL_DATA` を**そのまま返す**（参照が一致する）ことに依存しているので、両方セットで直す
 - **帯バナー（03）だけは配列ではなく `StripBanner | null`**。1件しか置けないため。`null` = 未追加で、入力欄も出さない。`setStripBannerField` は `null` のとき何もしない（追加前に値が入る経路を塞ぐ）
 - **下部大バナー（07）・トピックス（08）は中身0件ならブロックごと出さない**。入力側はタイトル欄（08 はボタン欄も）を隠し、`buildMailHtml` も `banners === ''` / `itemsHtml === ''` で `''` を返す。片方だけ直すと「画面に無い値が配信物に出る」ずれになる
-- **HTML出力ボタンは disabled にしない**。押せないボタンは理由を返せないため、押した時点でエラーを出して出力だけ止める。理由は「必須の欠け → URLエラー」の順に1つだけ出す
+- **HTML出力ボタンは disabled にしない**。押せないボタンは理由を返せないため、押した時点でエラーを出して出力だけ止める。理由は「必須の欠け → URLエラー」の順に1つだけ出す（判定は `describeBlockedReason`。HTML出力とテスト配信の両方がこれを呼ぶので、片方だけ文言を変えない）。例外は**テスト配信モーダルの送信中**で、ここだけ disabled にする（理由の提示ではなく二重送信の防止）
+- **テスト配信の宛先は `MailData` に入れない**。入力内容ではなく画面の状態なので `components/preview/TestDelivery.tsx` が `useState` で持ち、下書きにも保存しない（`DRAFT_VERSION` とは無関係）。モーダル本体は開いているあいだだけマウントされるので、送信の状態をリセットする効果は要らない
+- **テスト配信で送るHTMLは `forPreview` なしの配信用**で、200ms 遅れる `debouncedMailData` ではなく押した瞬間の `mailData` から作り直す（ダウンロードと同じ扱い）。サーバー（`app/api/test-delivery/route.ts`）は API キーを隠すためだけの薄いグルーで、判定は `lib/testDelivery.ts` の純関数に置く。**環境変数はリクエストのたびに読む**（モジュール読み込み時に評価すると、キーを持たない CI で本番ビルドが落ちる）
 
 ## 入力ブロックを追加・変更するとき
 
