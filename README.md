@@ -1,9 +1,10 @@
 # MMC - Mail-Magazine-Creator （HTMLメルマガ作成ツール）
+
 > HTMLメールを、HTMLを書かずに作成・プレビュー・テスト配信できるWebアプリケーション
 
 ### DEMO URL
-[Mail Magazine Creator](https://mail-magazine-creator.vercel.app/)
 
+[Mail Magazine Creator](https://mail-magazine-creator.vercel.app/)
 
 ## プロジェクト概要
 
@@ -13,6 +14,7 @@ HTMLメールをGUI上で作成・編集できるWebアプリケーションで�
 ## 開発背景・目的
 
 ### なぜ作ろうと思ったのか
+
 前職で週に50を超える手動メルマガ作成を行なってきました。当時そのメルマガテンプレートをExcel（VBA）にて作成していましたが、web上でリアルタイムプレビュー、検証、テスト配信まで一括でできるツールがあれば良いなと思い、作成しました。
 
 ### 想定ユーザー
@@ -28,7 +30,6 @@ HTMLメールをGUI上で作成・編集できるWebアプリケーションで�
 | 完成形が配信直前まで分からない。ブラウザで開いた見た目は実機と違う                | 600px幅のメールをスマホ枠で常時プレビューし、さらに**実際のメールとして1通送って確認**できるようにする |
 | リンク切れ・不正URLに気づかないまま配信してしまう                                 | URL形式を即時検証し、エラーが残っているあいだは**HTML出力もテスト配信も止める**                        |
 
-
 ## 使用技術
 
 | 分類          | 使用技術                                                                                               |
@@ -42,9 +43,8 @@ HTMLメールをGUI上で作成・編集できるWebアプリケーションで�
 | CI            | GitHub Actions（lint → format:check → typecheck → test → build → build-storybook）                     |
 | Runtime       | Node.js 22 以上（`.nvmrc` / `engines` で固定）                                                         |
 
-
-
 ## スクリーンショット
+
 ![スクリーンショット](public/image.png)
 
 ## 主な機能
@@ -75,11 +75,7 @@ HTMLメールをGUI上で作成・編集できるWebアプリケーションで�
 - **レスポンシブ** — `lg` 未満は縦積みレイアウト（プレビューは `70vh`）
 - **Storybook** — 共通UI部品のカタログと a11y チェック（14ストーリーファイル）
 
-
-
-
-
-## 🏗️ システム構成
+## システム構成
 
 データの流れは**一方向**です。`MailData`（唯一の状態）→ `buildMailHtml`（純関数）→ プレビュー / ダウンロード / テスト配信、と一本道になっており、HTMLの生成箇所は1か所しかありません。
 
@@ -115,7 +111,7 @@ flowchart TD
 2. **DBを持たない** — 1通ぶんの下書き以外に保存すべき状態がないため、localStorage で足ります。認証もサーバー側の永続化も不要になり、構成が単純になります。
 3. **HTMLを生成するのはクライアントだけ** — テスト配信でも `MailData` ではなく**生成済みのHTML文字列**をPOSTします。サーバーでも生成すると「プレビューと同じ物が届く」保証が崩れるためです。
 
-## 💡 技術的な工夫・設計
+## 技術的な工夫・設計
 
 ### 1. 状態は1か所・更新ロジックは純関数
 
@@ -229,7 +225,7 @@ localStorage への読み書きはすべて `try/catch` で包んでおり、保
 - **`DateTimeField` だけ表示値をローカル state で持つ** — `input[type=datetime-local]` は打鍵途中の値が巻き戻ると入力できなくなるためです。ただし初期値だけ見る作りにすると、マウント後に走る下書き復元が反映されません。`value !== syncedValue` のときだけ props に追従させています
 - **全消去は2段階確認** — インラインで確認を挟み、ブラウザの `confirm` は使いません
 
-## 🧪 テスト
+## テスト
 
 **Jest 30 + React Testing Library**。19ファイル・295テストが通ります（`npm test` / 2026年8月時点）。
 
@@ -264,7 +260,7 @@ npm run test:coverage # カバレッジ付き
 
 `typecheck` が `tsc --noEmit` 単体ではなく `next typegen && tsc --noEmit` なのは、`next-env.d.ts` と `.next/types` が生成物でリポジトリに含まれないためです（無い状態で tsc を回すと画像importが型エラーになる）。
 
-## 📁 ディレクトリ構成
+## ディレクトリ構成
 
 ```
 app/
@@ -314,7 +310,7 @@ docs/plan-*.md                    機能ごとの実装計画と設計判断の�
 jest.config.mjs / jest.setup.ts   next/jest ベースの設定 + jsdom に無いAPIのスタブ
 ```
 
-## 🚀 セットアップ
+## セットアップ
 
 前提: **Node.js 22 以上**（`.nvmrc` あり。Node 18 では Next.js 16 が起動しません）
 
@@ -349,7 +345,7 @@ npm run dev   # http://localhost:3000
 | `npm test` / `test:watch` / `test:coverage` | Jest                                            |
 | `npm run storybook` / `build-storybook`     | Storybook（http://localhost:6006）/ 静的ビルド  |
 
-## 🔐 環境変数
+## 環境変数
 
 テスト配信機能を使う場合のみ必要です。プロジェクト直下に `.env.local` を作成し、次の2つを設定します（`.env*` は `.gitignore` 済みで、値をリポジトリに入れることはありません）。
 
@@ -366,7 +362,7 @@ MAIL_FROM=noreply@example.com
 
 どちらかが未設定の場合、テスト配信は送信せず「送信の設定が完了していません」を返します。ホスティング先（Vercel 等）にも同じ2つを設定してください。
 
-## 🔮 今後の改善
+## 今後の改善
 
 **「1通を作る道具」から「継続配信の運用を支える道具」へ**広げることを想定しています。
 
@@ -379,7 +375,7 @@ MAIL_FROM=noreply@example.com
 
 なお **「ブロックを自由に配置できる汎用エディタ化」は意図的に候補から外しています**。レイアウトを固定しているからこそ、メールクライアント互換の検証範囲を絞り込めているためです。
 
-## 👤 開発者
+## 開発者
 
 - **Naoki Takashima**
 - GitHub: [@Naoki-Takashima](https://github.com/Naoki-Takashima)
